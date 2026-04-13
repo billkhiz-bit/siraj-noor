@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { VerseVisualisation } from "@/components/dashboard/verse-visualisation";
 import { BookmarkButton } from "@/components/auth/bookmark-button";
+import { ReflectionButton } from "@/components/auth/reflection-button";
 import { ReadingTracker } from "@/components/auth/reading-tracker";
 import { Badge } from "@/components/ui/badge";
 import { surahs } from "@/lib/data/surahs";
@@ -145,7 +146,10 @@ export default async function SurahDetailPage({
                         </p>
                       )}
                     </div>
-                    <BookmarkButton verseKey={verse.verse_key} />
+                    <div className="flex flex-col gap-2">
+                      <BookmarkButton verseKey={verse.verse_key} />
+                      <ReflectionButton verseKey={verse.verse_key} />
+                    </div>
                   </div>
                 </div>
               ))}

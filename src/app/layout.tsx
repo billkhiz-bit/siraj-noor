@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { BookmarksProvider } from "@/lib/auth/bookmarks-context";
+import { CollectionsProvider } from "@/lib/auth/collections-context";
 import { ReadingProgressProvider } from "@/lib/auth/reading-progress-context";
 import "./globals.css";
 
@@ -41,7 +42,9 @@ export default function RootLayout({
         <AuthProvider>
           <ReadingProgressProvider>
             <BookmarksProvider>
-              <TooltipProvider delay={300}>{children}</TooltipProvider>
+              <CollectionsProvider>
+                <TooltipProvider delay={300}>{children}</TooltipProvider>
+              </CollectionsProvider>
             </BookmarksProvider>
           </ReadingProgressProvider>
         </AuthProvider>
