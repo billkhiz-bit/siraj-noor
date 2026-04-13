@@ -64,58 +64,71 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
     async (name: string, description?: string) => {
       const trimmed = name.trim();
       if (!trimmed || !isAuthenticated) return;
+      const optimisticId = `optimistic-${Date.now()}`;
       const optimistic: Collection = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         name: trimmed,
         description,
         bookmarks_count: 0,
       };
-      const previous = collections;
-      setCollections([optimistic, ...previous]);
+      setCollections((current) => [optimistic, ...current]);
       try {
         const created = await qfApi.createCollection(trimmed, description);
         setCollections((current) =>
-          current.map((c) => (c.id === optimistic.id ? created : c))
+          current.map((c) => (c.id === optimisticId ? created : c))
         );
       } catch {
-        setCollections(previous);
+        setCollections((current) =>
+          current.filter((c) => c.id !== optimisticId)
+        );
         setError("Failed to create collection");
       }
     },
-    [collections, isAuthenticated]
+    [isAuthenticated]
   );
 
-  const remove = useCallback(
-    async (id: string) => {
-      const previous = collections;
-      setCollections(previous.filter((c) => c.id !== id));
-      try {
-        await qfApi.deleteCollection(id);
-      } catch {
-        setCollections(previous);
-        setError("Failed to delete collection");
+  const remove = useCallback(async (id: string) => {
+    let snapshot: Collection | undefined;
+    setCollections((current) => {
+      snapshot = current.find((c) => c.id === id);
+      return current.filter((c) => c.id !== id);
+    });
+    try {
+      await qfApi.deleteCollection(id);
+    } catch {
+      if (snapshot) {
+        const restored = snapshot;
+        setCollections((current) =>
+          current.some((c) => c.id === restored.id) ? current : [restored, ...current]
+        );
       }
-    },
-    [collections]
-  );
+      setError("Failed to delete collection");
+    }
+  }, []);
 
-  const rename = useCallback(
-    async (id: string, name: string) => {
-      const trimmed = name.trim();
-      if (!trimmed) return;
-      const previous = collections;
-      setCollections(
-        previous.map((c) => (c.id === id ? { ...c, name: trimmed } : c))
-      );
-      try {
-        await qfApi.updateCollection(id, { name: trimmed });
-      } catch {
-        setCollections(previous);
-        setError("Failed to rename collection");
+  const rename = useCallback(async (id: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    let previousName: string | undefined;
+    setCollections((current) =>
+      current.map((c) => {
+        if (c.id !== id) return c;
+        previousName = c.name;
+        return { ...c, name: trimmed };
+      })
+    );
+    try {
+      await qfApi.updateCollection(id, { name: trimmed });
+    } catch {
+      if (previousName !== undefined) {
+        const original = previousName;
+        setCollections((current) =>
+          current.map((c) => (c.id === id ? { ...c, name: original } : c))
+        );
       }
-    },
-    [collections]
-  );
+      setError("Failed to rename collection");
+    }
+  }, []);
 
   const value = useMemo<CollectionsContextValue>(
     () => ({

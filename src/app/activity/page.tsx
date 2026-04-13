@@ -99,7 +99,10 @@ export default function ActivityPage() {
             {isLoading ? (
               <div className="h-[400px] animate-pulse rounded-xl bg-card/40" />
             ) : error ? (
-              <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-6 text-sm text-rose-200">
+              <div
+                role="alert"
+                className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-6 text-sm text-rose-200"
+              >
                 {error}
               </div>
             ) : (

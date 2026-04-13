@@ -70,13 +70,18 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       const existing = bookmarks.find((b) => b.verse_key === verseKey);
 
       if (existing) {
-        // Optimistic remove
-        const previous = bookmarks;
-        setBookmarks(previous.filter((b) => b.id !== existing.id));
+        // Optimistic remove — functional update so concurrent toggles
+        // can't stomp each other's revert state.
+        setBookmarks((current) => current.filter((b) => b.id !== existing.id));
         try {
           await qfApi.deleteBookmark(existing.id);
         } catch {
-          setBookmarks(previous);
+          // Re-insert only this bookmark on failure.
+          setBookmarks((current) =>
+            current.some((b) => b.id === existing.id)
+              ? current
+              : [existing, ...current]
+          );
           setError("Failed to remove bookmark");
         }
         return;
@@ -89,15 +94,18 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         verse_key: verseKey,
         note,
       };
-      const previous = bookmarks;
-      setBookmarks([optimistic, ...previous]);
+      setBookmarks((current) => [optimistic, ...current]);
       try {
         const created = await qfApi.createBookmark(verseKey, note);
         setBookmarks((current) =>
           current.map((b) => (b.id === optimisticId ? created : b))
         );
       } catch {
-        setBookmarks(previous);
+        // Remove only the optimistic placeholder — leave any other
+        // in-flight or successful items untouched.
+        setBookmarks((current) =>
+          current.filter((b) => b.id !== optimisticId)
+        );
         setError("Failed to save bookmark");
       }
     },

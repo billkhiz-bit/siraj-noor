@@ -52,7 +52,10 @@ export default function BookmarksPage() {
             <div className="h-20 animate-pulse rounded-lg bg-card/40" />
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-6 text-sm text-rose-200">
+          <div
+            role="alert"
+            className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-6 text-sm text-rose-200"
+          >
             {error}
           </div>
         ) : bookmarks.length === 0 ? (

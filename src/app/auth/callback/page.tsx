@@ -57,7 +57,11 @@ export default function AuthCallbackPage() {
         if (cancelled) return;
         refresh();
         update({ status: "success", message: "Signed in — redirecting…" });
-        const target = returnTo && returnTo.startsWith("/") ? returnTo : "/";
+        const isSafeReturnTo =
+          typeof returnTo === "string" &&
+          returnTo.startsWith("/") &&
+          !returnTo.startsWith("//");
+        const target = isSafeReturnTo ? returnTo : "/";
         setTimeout(() => router.replace(target), 400);
       } catch (err) {
         update({

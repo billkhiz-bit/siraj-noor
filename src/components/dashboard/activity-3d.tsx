@@ -229,8 +229,29 @@ export function Activity3D({ sessions }: Activity3DProps) {
     return { activeDays, totalSessions, busiest };
   }, [cells]);
 
+  const summary = `Reading activity heatmap, last 365 days. ${totals.activeDays} active days, ${totals.totalSessions} total reading sessions.`;
+
   return (
-    <div className="relative h-[400px] w-full overflow-hidden rounded-xl border border-border bg-[#050510] md:h-[560px]">
+    <div
+      className="relative h-[400px] w-full overflow-hidden rounded-xl border border-border bg-[#050510] md:h-[560px]"
+      role="img"
+      aria-label={summary}
+    >
+      {/* Screen-reader accessible summary of the heatmap data */}
+      <p className="sr-only">
+        {summary}{" "}
+        {totals.busiest && totals.busiest.count > 0 ? (
+          <>
+            Most active day was{" "}
+            {totals.busiest.date.toLocaleDateString(undefined, {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}{" "}
+            with {totals.busiest.count} sessions.
+          </>
+        ) : null}
+      </p>
       <Canvas
         shadows
         camera={{ position: [0, 18, 20], fov: 50 }}

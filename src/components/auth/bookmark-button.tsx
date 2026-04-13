@@ -14,7 +14,16 @@ export function BookmarkButton({ verseKey, size = "md" }: BookmarkButtonProps) {
   const { isBookmarked, toggle } = useBookmarks();
 
   const active = isAuthenticated && isBookmarked(verseKey);
-  const dimensions = size === "sm" ? "h-7 w-7" : "h-8 w-8";
+  // Touch target is 44x44 on mobile (WCAG 2.5.5) and the requested compact
+  // size on md+ where we have a pointer.
+  const dimensions =
+    size === "sm" ? "h-11 w-11 md:h-7 md:w-7" : "h-11 w-11 md:h-8 md:w-8";
+
+  const [chapterRaw, verseRaw] = verseKey.split(":");
+  const accessibleVerseLabel =
+    chapterRaw && verseRaw
+      ? `surah ${chapterRaw}, ayah ${verseRaw}`
+      : verseKey;
 
   function handleClick() {
     if (!isConfigured) return;
@@ -32,7 +41,9 @@ export function BookmarkButton({ verseKey, size = "md" }: BookmarkButtonProps) {
       type="button"
       onClick={handleClick}
       aria-label={
-        active ? `Remove bookmark from ${verseKey}` : `Bookmark ${verseKey}`
+        active
+          ? `Remove bookmark from ${accessibleVerseLabel}`
+          : `Bookmark ${accessibleVerseLabel}`
       }
       aria-pressed={active}
       title={active ? "Bookmarked" : "Bookmark this ayah"}

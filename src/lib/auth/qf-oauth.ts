@@ -78,32 +78,38 @@ export async function completeLogin(
     throw new Error("State mismatch — possible CSRF attack. Login aborted.");
   }
 
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    client_id: QF_CLIENT_ID,
-    code,
-    redirect_uri: pkce.redirectUri,
-    code_verifier: pkce.codeVerifier,
-  });
+  // Once state is validated, the authorization code + code_verifier are
+  // single-use. Always clear PKCE on exit so a failed exchange can't be
+  // retried with the same verifier (or trigger a stale-state replay later).
+  try {
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: QF_CLIENT_ID,
+      code,
+      redirect_uri: pkce.redirectUri,
+      code_verifier: pkce.codeVerifier,
+    });
 
-  const response = await fetch(QF_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString(),
-  });
+    const response = await fetch(QF_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    });
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(
-      `Token exchange failed (${response.status}): ${text || response.statusText}`
-    );
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(
+        `Token exchange failed (${response.status}): ${text || response.statusText}`
+      );
+    }
+
+    const json: TokenResponse = await response.json();
+    const tokens = tokensFromResponse(json);
+    saveTokens(tokens);
+    return { tokens, returnTo: pkce.returnTo };
+  } finally {
+    clearPkce();
   }
-
-  const json: TokenResponse = await response.json();
-  const tokens = tokensFromResponse(json);
-  saveTokens(tokens);
-  clearPkce();
-  return { tokens, returnTo: pkce.returnTo };
 }
 
 export async function refreshTokens(): Promise<StoredTokens | null> {
@@ -116,14 +122,27 @@ export async function refreshTokens(): Promise<StoredTokens | null> {
     refresh_token: current.refreshToken,
   });
 
-  const response = await fetch(QF_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString(),
-  });
+  let response: Response;
+  try {
+    response = await fetch(QF_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    });
+  } catch {
+    // Network/CORS/DNS failure — keep the existing tokens so the user
+    // isn't logged out by a transient connectivity blip.
+    return null;
+  }
+
+  if (response.status === 400 || response.status === 401) {
+    // Refresh token rejected — session is genuinely dead.
+    clearTokens();
+    return null;
+  }
 
   if (!response.ok) {
-    clearTokens();
+    // 5xx or other transient — leave tokens in place, caller surfaces error.
     return null;
   }
 

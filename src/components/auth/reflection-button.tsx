@@ -28,7 +28,14 @@ export function ReflectionButton({ verseKey, size = "md" }: ReflectionButtonProp
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const dimensions = size === "sm" ? "h-7 w-7" : "h-8 w-8";
+  const dimensions =
+    size === "sm" ? "h-11 w-11 md:h-7 md:w-7" : "h-11 w-11 md:h-8 md:w-8";
+
+  const [chapterRaw, verseRaw] = verseKey.split(":");
+  const accessibleVerseLabel =
+    chapterRaw && verseRaw
+      ? `surah ${chapterRaw}, ayah ${verseRaw}`
+      : verseKey;
 
   if (!isConfigured) return null;
 
@@ -67,7 +74,7 @@ export function ReflectionButton({ verseKey, size = "md" }: ReflectionButtonProp
           <button
             type="button"
             onClick={handleTriggerClick}
-            aria-label={`Reflect on ${verseKey}`}
+            aria-label={`Reflect on ${accessibleVerseLabel}`}
             title="Add a reflection"
             className={cn(
               "flex shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-amber-500/40 hover:text-amber-400",
@@ -92,7 +99,7 @@ export function ReflectionButton({ verseKey, size = "md" }: ReflectionButtonProp
       />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Reflect on {verseKey}</DialogTitle>
+          <DialogTitle>Reflect on {accessibleVerseLabel}</DialogTitle>
           <DialogDescription>
             Capture a thought, dua, or insight. Reflections are saved to your
             Quran.com account and visible only to you unless you choose to
@@ -101,23 +108,32 @@ export function ReflectionButton({ verseKey, size = "md" }: ReflectionButtonProp
         </DialogHeader>
 
         <textarea
+          id="reflection-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="What did this ayah bring to mind?"
           rows={5}
           className="w-full resize-none rounded-md border border-border bg-background p-3 text-sm leading-relaxed text-foreground focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
           maxLength={2000}
-          aria-label={`Reflection on ${verseKey}`}
+          aria-label={`Reflection on ${accessibleVerseLabel}`}
+          aria-describedby="reflection-counter reflection-status"
         />
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{text.trim().length} / 2000</span>
-          {status === "error" && errorMessage && (
-            <span className="text-rose-400">{errorMessage}</span>
-          )}
-          {status === "success" && (
-            <span className="text-emerald-400">Saved</span>
-          )}
+        <div
+          className="flex items-center justify-between text-xs text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
+          <span id="reflection-counter">{text.trim().length} / 2000</span>
+          <span id="reflection-status">
+            {status === "saving" && "Saving…"}
+            {status === "success" && (
+              <span className="text-emerald-400">Saved</span>
+            )}
+            {status === "error" && errorMessage && (
+              <span className="text-rose-400">{errorMessage}</span>
+            )}
+          </span>
         </div>
 
         <div className="flex justify-end gap-2 pt-2">

@@ -50,17 +50,30 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(true);
     setError(null);
+    const failures: string[] = [];
     try {
-      const [sessionsResp, streakResp] = await Promise.all([
-        qfApi.listReadingSessions().catch(() => ({ reading_sessions: [] })),
-        qfApi.getStreak().catch(() => null),
+      const [sessionsResult, streakResult] = await Promise.allSettled([
+        qfApi.listReadingSessions(),
+        qfApi.getStreak(),
       ]);
-      setSessions(sessionsResp.reading_sessions ?? []);
-      if (streakResp) {
+
+      if (sessionsResult.status === "fulfilled") {
+        setSessions(sessionsResult.value.reading_sessions ?? []);
+      } else {
+        failures.push("reading sessions");
+      }
+
+      if (streakResult.status === "fulfilled") {
         setStreak({
-          current: streakResp.current_streak ?? 0,
-          longest: streakResp.longest_streak ?? 0,
+          current: streakResult.value.current_streak ?? 0,
+          longest: streakResult.value.longest_streak ?? 0,
         });
+      } else {
+        failures.push("streak");
+      }
+
+      if (failures.length > 0) {
+        setError(`Couldn't load ${failures.join(" and ")}`);
       }
     } catch (err) {
       const message =
@@ -95,26 +108,27 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
     async (chapterId: number, verseKey?: string) => {
       if (!isAuthenticated) return;
 
-      // Optimistic — add to read set immediately
+      const optimisticId = `optimistic-${chapterId}-${Date.now()}`;
       const optimistic: ReadingSession = {
-        id: `optimistic-${chapterId}-${Date.now()}`,
+        id: optimisticId,
         chapter_id: chapterId,
         verse_key: verseKey,
         created_at: new Date().toISOString(),
       };
-      const previous = sessions;
       setSessions((current) => [optimistic, ...current]);
 
       try {
         const created = await qfApi.createReadingSession(chapterId, verseKey);
         setSessions((current) =>
-          current.map((s) => (s.id === optimistic.id ? created : s))
+          current.map((s) => (s.id === optimisticId ? created : s))
         );
       } catch {
-        setSessions(previous);
+        // Remove only this optimistic entry on failure.
+        setSessions((current) => current.filter((s) => s.id !== optimisticId));
+        setError("Couldn't log this reading session");
       }
     },
-    [isAuthenticated, sessions]
+    [isAuthenticated]
   );
 
   const value = useMemo<ReadingProgressContextValue>(

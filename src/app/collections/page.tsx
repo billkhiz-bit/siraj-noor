@@ -59,21 +59,33 @@ export default function CollectionsPage() {
                 New collection
               </h2>
               <div className="grid gap-3 md:grid-cols-[2fr_3fr_auto]">
-                <input
-                  value={draftName}
-                  onChange={(e) => setDraftName(e.target.value)}
-                  placeholder="Name (e.g. Patience)"
-                  maxLength={80}
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
-                  required
-                />
-                <input
-                  value={draftDescription}
-                  onChange={(e) => setDraftDescription(e.target.value)}
-                  placeholder="Optional description"
-                  maxLength={200}
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
-                />
+                <div>
+                  <label htmlFor="collection-name" className="sr-only">
+                    Collection name
+                  </label>
+                  <input
+                    id="collection-name"
+                    value={draftName}
+                    onChange={(e) => setDraftName(e.target.value)}
+                    placeholder="Name (e.g. Patience)"
+                    maxLength={80}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="collection-description" className="sr-only">
+                    Collection description
+                  </label>
+                  <input
+                    id="collection-description"
+                    value={draftDescription}
+                    onChange={(e) => setDraftDescription(e.target.value)}
+                    placeholder="Optional description"
+                    maxLength={200}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={!draftName.trim()}
@@ -85,7 +97,10 @@ export default function CollectionsPage() {
             </form>
 
             {error && (
-              <div className="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/5 p-4 text-sm text-rose-200">
+              <div
+                role="alert"
+                className="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/5 p-4 text-sm text-rose-200"
+              >
                 {error}
               </div>
             )}
@@ -115,7 +130,7 @@ export default function CollectionsPage() {
                 {collections.map((collection, i) => (
                   <article
                     key={collection.id}
-                    className="group relative rounded-xl border border-border bg-gradient-to-br from-amber-500/5 via-card to-card p-5 shadow-[0_8px_30px_-12px_rgba(245,158,11,0.25)] transition-transform duration-300 hover:-translate-y-1"
+                    className="group relative rounded-xl border border-border bg-gradient-to-br from-amber-500/5 via-card to-card p-5 shadow-[0_8px_30px_-12px_rgba(245,158,11,0.25)] transition-transform duration-300 motion-safe:hover:-translate-y-1"
                     style={{
                       transform: `rotateY(${(i % 3 - 1) * 2}deg)`,
                       transformStyle: "preserve-3d",
