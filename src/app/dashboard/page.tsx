@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Surah3DChart } from "@/components/dashboard/surah-3d-chart";
+import { TodayPanel } from "@/components/auth/today-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { totalAyat, meccanCount, medinanCount, surahs } from "@/lib/data/surahs";
 
@@ -13,6 +14,7 @@ export default function DashboardPage() {
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-4 pb-8 pt-16 md:px-6 md:py-8">
+          <TodayPanel />
           <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight">
               Surah Structure

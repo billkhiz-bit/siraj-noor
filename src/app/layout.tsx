@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { BookmarksProvider } from "@/lib/auth/bookmarks-context";
+import { ReadingProgressProvider } from "@/lib/auth/reading-progress-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,9 +39,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <AuthProvider>
-          <BookmarksProvider>
-            <TooltipProvider delay={300}>{children}</TooltipProvider>
-          </BookmarksProvider>
+          <ReadingProgressProvider>
+            <BookmarksProvider>
+              <TooltipProvider delay={300}>{children}</TooltipProvider>
+            </BookmarksProvider>
+          </ReadingProgressProvider>
         </AuthProvider>
       </body>
     </html>

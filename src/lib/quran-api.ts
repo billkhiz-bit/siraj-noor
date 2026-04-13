@@ -113,3 +113,32 @@ export async function fetchChapterInfo(chapterId: number): Promise<ChapterInfo |
     return null;
   }
 }
+
+export async function fetchVerseByKey(verseKey: string): Promise<Verse | null> {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/verses/by_key/${verseKey}?language=en&translations=20&fields=text_uthmani,verse_key,verse_number,juz_number,hizb_number,ruku_number,page_number,sajdah_number`,
+      { cache: "force-cache" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const v = data.verse as Record<string, unknown> & {
+      translations?: Array<{ text: string }>;
+    };
+    if (!v) return null;
+    return {
+      id: v.id as number,
+      verse_number: v.verse_number as number,
+      verse_key: v.verse_key as string,
+      text_uthmani: v.text_uthmani as string,
+      juz_number: v.juz_number as number,
+      hizb_number: v.hizb_number as number,
+      ruku_number: v.ruku_number as number,
+      page_number: v.page_number as number,
+      sajdah_number: (v.sajdah_number as number | null) ?? null,
+      translation: v.translations?.[0]?.text?.replace(/<[^>]*>/g, "") ?? undefined,
+    };
+  } catch {
+    return null;
+  }
+}

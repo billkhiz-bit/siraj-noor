@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { VerseVisualisation } from "@/components/dashboard/verse-visualisation";
 import { BookmarkButton } from "@/components/auth/bookmark-button";
+import { ReadingTracker } from "@/components/auth/reading-tracker";
 import { Badge } from "@/components/ui/badge";
 import { surahs } from "@/lib/data/surahs";
 import { fetchAllVerses, fetchChapterInfo } from "@/lib/quran-api";
@@ -33,6 +34,7 @@ export default async function SurahDetailPage({
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar />
+      <ReadingTracker chapterId={surah.number} />
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-4 pb-8 pt-16 md:px-6 md:py-8">
           {/* Back link */}

@@ -15,12 +15,14 @@ import * as THREE from "three";
 import { surahs, type Surah } from "@/lib/data/surahs";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useKeyboardNav } from "@/hooks/use-keyboard-nav";
+import { useReadingProgress } from "@/lib/auth/reading-progress-context";
 
 type SortMode = "canonical" | "revelation" | "length";
 
 const MECCAN_COLOUR = new THREE.Color("#22d3ee");
 const MEDINAN_COLOUR = new THREE.Color("#a78bfa");
 const SELECTED_COLOUR = new THREE.Color("#f59e0b");
+const READ_COLOUR = new THREE.Color("#fbbf24");
 const MAX_AYAT = 286;
 const RING_RADIUS = 14;
 const BAR_RADIUS = 0.28;
@@ -37,6 +39,7 @@ interface SurahBarProps {
   onClick: (surah: Surah) => void;
   isHovered: boolean;
   isSelected: boolean;
+  isRead: boolean;
   animate: boolean;
 }
 
@@ -48,6 +51,7 @@ function SurahBar({
   onClick,
   isHovered,
   isSelected,
+  isRead,
   animate,
 }: SurahBarProps) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -80,7 +84,8 @@ function SurahBar({
 
     // Material animation
     const mat = meshRef.current.material as THREE.MeshStandardMaterial;
-    const targetEmissive = active ? 0.9 : 0.35;
+    const baseEmissive = isRead ? 0.65 : 0.35;
+    const targetEmissive = active ? 0.95 : baseEmissive;
     mat.emissiveIntensity = THREE.MathUtils.lerp(
       mat.emissiveIntensity,
       targetEmissive,
@@ -90,6 +95,9 @@ function SurahBar({
     if (isSelected) {
       mat.emissive.lerp(SELECTED_COLOUR, 0.1);
       mat.color.lerp(SELECTED_COLOUR, 0.1);
+    } else if (isRead) {
+      mat.emissive.lerp(READ_COLOUR, 0.08);
+      mat.color.lerp(baseColour, 0.05);
     } else {
       mat.emissive.lerp(baseColour, 0.1);
       mat.color.lerp(baseColour, 0.1);
@@ -146,6 +154,24 @@ function SurahBar({
           opacity={active ? 1 : 0.88}
         />
       </mesh>
+
+      {/* Read marker: a small amber ring at the base */}
+      {isRead && (
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, 0.02, 0]}
+        >
+          <ringGeometry
+            args={[BAR_RADIUS * 1.4, BAR_RADIUS * 2.2, 24]}
+          />
+          <meshBasicMaterial
+            color={READ_COLOUR}
+            transparent
+            opacity={0.55}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
 
       {/* Label for notable surahs or selected */}
       {(NOTABLE.has(surah.number) || active) && (
@@ -233,6 +259,7 @@ function Scene({
   sortMode,
   hoveredSurah,
   selectedIndex,
+  readSurahs,
   onHover,
   onClick,
   controlsRef,
@@ -240,6 +267,7 @@ function Scene({
   sortMode: SortMode;
   hoveredSurah: Surah | null;
   selectedIndex: number;
+  readSurahs: Set<number>;
   onHover: (s: Surah | null) => void;
   onClick: (s: Surah) => void;
   controlsRef: React.MutableRefObject<{ zoomIn: () => void; zoomOut: () => void } | null>;
@@ -315,6 +343,7 @@ function Scene({
           onClick={onClick}
           isHovered={hoveredSurah?.number === surah.number}
           isSelected={i === selectedIndex}
+          isRead={readSurahs.has(surah.number)}
           animate={true}
         />
       ))}
@@ -351,6 +380,7 @@ export function Surah3DChart() {
   const [hoveredSurah, setHoveredSurah] = useState<Surah | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const controlsRef = useRef<{ zoomIn: () => void; zoomOut: () => void } | null>(null);
+  const { readSurahs } = useReadingProgress();
 
   const sortedData = useMemo(() => {
     const data = [...surahs];
@@ -411,6 +441,12 @@ export function Surah3DChart() {
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />
             Selected
           </span>
+          {readSurahs.size > 0 && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full ring-2 ring-amber-400/60" />
+              Read ({readSurahs.size})
+            </span>
+          )}
         </div>
       </div>
 
@@ -430,6 +466,7 @@ export function Surah3DChart() {
             sortMode={sortMode}
             hoveredSurah={hoveredSurah}
             selectedIndex={selectedIndex}
+            readSurahs={readSurahs}
             onHover={setHoveredSurah}
             onClick={handleClick}
             controlsRef={controlsRef}
