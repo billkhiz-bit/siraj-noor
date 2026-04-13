@@ -5,8 +5,11 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { SearchModal } from "@/components/dashboard/search";
+import { UserMenu } from "@/components/auth/user-menu";
 
-const views = [
+type View = { href: string; label: string; icon: string; personal?: boolean };
+
+const exploreViews: View[] = [
   { href: "/dashboard", label: "Surah Structure", icon: "📊" },
   { href: "/words", label: "Word Frequency", icon: "🔤" },
   { href: "/isnad", label: "Isnad Network", icon: "🕸️" },
@@ -16,6 +19,12 @@ const views = [
   { href: "/journeys", label: "Islamic Journeys", icon: "🕌" },
   { href: "/names", label: "Names of Allah", icon: "✨" },
   { href: "/sites", label: "Sacred Sites", icon: "🕋" },
+];
+
+const personalViews: View[] = [
+  { href: "/activity", label: "Activity", icon: "🔥", personal: true },
+  { href: "/bookmarks", label: "Bookmarks", icon: "🔖", personal: true },
+  { href: "/collections", label: "Collections", icon: "📂", personal: true },
 ];
 
 export function Sidebar() {
@@ -75,10 +84,10 @@ export function Sidebar() {
         {/* Brand */}
         <div className="flex items-center gap-3 border-b border-border px-6 py-5">
           <span className="font-mono text-2xl font-bold tracking-tight text-amber-500">
-            Siraj
+            Siraj Noor
           </span>
           <span className="text-xs text-muted-foreground">
-            سراج · The Lamp
+            سراج نور
           </span>
         </div>
 
@@ -88,8 +97,38 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-1 flex-col gap-1 px-3 py-4" aria-label="Dashboard navigation">
-          {views.map((view) => {
+        <nav
+          className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
+          aria-label="Dashboard navigation"
+        >
+          <div className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            Explore
+          </div>
+          {exploreViews.map((view) => {
+            const isActive = pathname === view.href;
+            return (
+              <Link
+                key={view.href}
+                href={view.href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                )}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <span className="text-base" aria-hidden="true">{view.icon}</span>
+                {view.label}
+              </Link>
+            );
+          })}
+
+          <div className="mb-1 mt-4 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            Personal
+          </div>
+          {personalViews.map((view) => {
             const isActive = pathname === view.href;
             return (
               <Link
@@ -110,6 +149,11 @@ export function Sidebar() {
             );
           })}
         </nav>
+
+        {/* User menu */}
+        <div className="border-t border-border px-3 py-3">
+          <UserMenu />
+        </div>
 
         {/* Footer stats */}
         <div className="border-t border-border px-6 py-4">

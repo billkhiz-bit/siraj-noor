@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/lib/auth/auth-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,9 +20,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Siraj - Qur'an & Hadith Data Visualisation",
+  title: "Siraj Noor — Qur'an & Hadith Data Visualisation",
   description:
-    "Interactive 3D dashboard illuminating the structure, themes, and connections within the Qur'an and Hadith collections.",
+    "Interactive 3D dashboard illuminating the structure, themes, and connections within the Qur'an and Hadith collections, with personal bookmarks, collections, streaks, and reflections powered by Quran Foundation.",
 };
 
 export default function RootLayout({
@@ -35,7 +36,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <TooltipProvider delay={300}>{children}</TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider delay={300}>{children}</TooltipProvider>
+        </AuthProvider>
       </body>
     </html>
   );
