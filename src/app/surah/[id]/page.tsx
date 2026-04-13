@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { VerseVisualisation } from "@/components/dashboard/verse-visualisation";
+import { BookmarkButton } from "@/components/auth/bookmark-button";
 import { Badge } from "@/components/ui/badge";
 import { surahs } from "@/lib/data/surahs";
 import { fetchAllVerses, fetchChapterInfo } from "@/lib/quran-api";
@@ -116,6 +117,7 @@ export default async function SurahDetailPage({
               {verses.map((verse) => (
                 <div
                   key={verse.verse_key}
+                  id={`verse-${verse.verse_key}`}
                   className="rounded-lg border border-border bg-card p-4"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -141,6 +143,7 @@ export default async function SurahDetailPage({
                         </p>
                       )}
                     </div>
+                    <BookmarkButton verseKey={verse.verse_key} />
                   </div>
                 </div>
               ))}

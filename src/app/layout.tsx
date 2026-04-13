@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth/auth-context";
+import { BookmarksProvider } from "@/lib/auth/bookmarks-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,7 +38,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <AuthProvider>
-          <TooltipProvider delay={300}>{children}</TooltipProvider>
+          <BookmarksProvider>
+            <TooltipProvider delay={300}>{children}</TooltipProvider>
+          </BookmarksProvider>
         </AuthProvider>
       </body>
     </html>
