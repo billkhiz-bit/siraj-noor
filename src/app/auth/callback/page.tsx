@@ -7,48 +7,67 @@ import { completeLogin } from "@/lib/auth/qf-oauth";
 import { useAuth } from "@/lib/auth/auth-context";
 
 type Status = "pending" | "success" | "error";
+interface CallbackState {
+  status: Status;
+  message: string;
+}
+
+const INITIAL: CallbackState = {
+  status: "pending",
+  message: "Completing sign-in…",
+};
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const { refresh } = useAuth();
-  const [status, setStatus] = useState<Status>("pending");
-  const [message, setMessage] = useState<string>("Completing sign-in…");
+  const [{ status, message }, setState] = useState<CallbackState>(INITIAL);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get("error");
-    if (error) {
-      setStatus("error");
-      setMessage(
-        params.get("error_description") ??
-          `Sign-in was cancelled or failed (${error}).`
-      );
-      return;
-    }
-
-    const code = params.get("code");
-    const state = params.get("state");
-    if (!code || !state) {
-      setStatus("error");
-      setMessage("Missing authorisation code in callback URL.");
-      return;
-    }
-
     let cancelled = false;
-    completeLogin(code, state)
-      .then(({ returnTo }) => {
+
+    function update(next: CallbackState) {
+      if (!cancelled) setState(next);
+    }
+
+    async function run() {
+      const params = new URLSearchParams(window.location.search);
+      const error = params.get("error");
+      if (error) {
+        update({
+          status: "error",
+          message:
+            params.get("error_description") ??
+            `Sign-in was cancelled or failed (${error}).`,
+        });
+        return;
+      }
+
+      const code = params.get("code");
+      const stateParam = params.get("state");
+      if (!code || !stateParam) {
+        update({
+          status: "error",
+          message: "Missing authorisation code in callback URL.",
+        });
+        return;
+      }
+
+      try {
+        const { returnTo } = await completeLogin(code, stateParam);
         if (cancelled) return;
         refresh();
-        setStatus("success");
-        setMessage("Signed in — redirecting…");
+        update({ status: "success", message: "Signed in — redirecting…" });
         const target = returnTo && returnTo.startsWith("/") ? returnTo : "/";
         setTimeout(() => router.replace(target), 400);
-      })
-      .catch((err: Error) => {
-        if (cancelled) return;
-        setStatus("error");
-        setMessage(err.message);
-      });
+      } catch (err) {
+        update({
+          status: "error",
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    void run();
 
     return () => {
       cancelled = true;

@@ -4,12 +4,15 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { loadTokens, type StoredTokens } from "./storage";
+import {
+  loadTokens,
+  subscribeToTokenChanges,
+  type StoredTokens,
+} from "./storage";
 import { beginLogin, logout as oauthLogout } from "./qf-oauth";
 import { isAuthConfigured } from "./config";
 
@@ -45,25 +48,19 @@ function decodeJwtPayload(token: string): AuthUser | null {
   }
 }
 
-const STORAGE_EVENT_KEY = "qf.tokens.v1";
+const SERVER_TOKENS: StoredTokens | null = null;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [tokens, setTokens] = useState<StoredTokens | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const tokens = useSyncExternalStore(
+    subscribeToTokenChanges,
+    loadTokens,
+    () => SERVER_TOKENS
+  );
 
   const refresh = useCallback(() => {
-    setTokens(loadTokens());
+    // useSyncExternalStore tracks token writes directly via subscribeToTokenChanges.
+    // This stub remains for callers that previously needed a manual nudge.
   }, []);
-
-  useEffect(() => {
-    refresh();
-    setIsReady(true);
-    function onStorage(event: StorageEvent) {
-      if (event.key === STORAGE_EVENT_KEY) refresh();
-    }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [refresh]);
 
   const user = useMemo<AuthUser | null>(() => {
     if (!tokens?.idToken) return null;
@@ -72,16 +69,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      isReady,
+      isReady: typeof window !== "undefined",
       isAuthenticated: Boolean(tokens?.accessToken),
       isConfigured: isAuthConfigured(),
       tokens,
       user,
-      login: (returnTo?: string) => beginLogin(returnTo ?? window.location.pathname),
+      login: (returnTo?: string) =>
+        beginLogin(returnTo ?? window.location.pathname),
       logout: oauthLogout,
       refresh,
     }),
-    [isReady, tokens, user, refresh]
+    [tokens, user, refresh]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

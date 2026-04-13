@@ -17,9 +17,31 @@ export interface StoredPkce {
   returnTo: string;
 }
 
+const tokenListeners = new Set<() => void>();
+function notifyTokenListeners(): void {
+  for (const listener of tokenListeners) listener();
+}
+
+export function subscribeToTokenChanges(callback: () => void): () => void {
+  tokenListeners.add(callback);
+  function onStorage(event: StorageEvent) {
+    if (event.key === TOKEN_KEY) callback();
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", onStorage);
+  }
+  return () => {
+    tokenListeners.delete(callback);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", onStorage);
+    }
+  };
+}
+
 export function saveTokens(tokens: StoredTokens): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
+  notifyTokenListeners();
 }
 
 export function loadTokens(): StoredTokens | null {
@@ -36,6 +58,7 @@ export function loadTokens(): StoredTokens | null {
 export function clearTokens(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(TOKEN_KEY);
+  notifyTokenListeners();
 }
 
 export function savePkce(pkce: StoredPkce): void {
