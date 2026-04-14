@@ -103,12 +103,52 @@ Rather than modifying the frozen Ramadan Hacks artefact, this is a parallel fork
 
 ## Day 3 — in progress (2026-04-14 evening)
 
-### New blocker discovered
+### 403 invalid_token — root cause definitively diagnosed
 - After successful sign-in, all User API calls to `apis.quran.foundation/auth/v1/*` return **403 invalid_token "The access token is expired or inactive"**
-- Token is freshly issued, not actually expired
-- Confirmed via probe that the API correctly distinguishes "malformed JWT" (400) from "valid JWT but rejected" (403) — our token gets the second error
-- Likely cause: audience/issuer mismatch between the prelive OAuth server and the shared `apis.quran.foundation` resource server
-- Follow-up email drafted for Basit with specific 400-vs-403 diagnostic evidence, pending send
+- Token is freshly issued (3500+ seconds remaining on `exp`), refresh+retry produces the same result — not a lifetime issue
+- Built `/debug/auth` client-side diagnostic page that decodes the JWT and runs a probe suite (see below)
+- **Root cause:** the JWT payload has `"aud": []` — the audience claim is an empty array. No resource server will ever match an empty audience, so every authenticated call is rejected.
+- **Confirmed via client-side probe:** attempting to force `?audience=apis.quran.foundation` on the authorize URL returns a very specific Hydra error:
+  > *"Requested audience 'apis.quran.foundation' has not been whitelisted by the OAuth 2.0 Client."*
+- Tested three audience variants (bare, https, https+path) — all three rejected with the same "not whitelisted" message
+- That confirms the `allowed_audiences` list on the Hydra client is empty. **There is no client-side workaround** — the fix has to happen on QF's Hydra admin config for both clients.
+
+### Diagnostic page at `/debug/auth`
+- Not linked from anywhere, manual URL entry only
+- Decodes the current JWT header and payload, displays all claims + expiry
+- **Probe suite** that runs five tests on the current token:
+  1. `GET /userinfo` with `x-auth-token` header
+  2. `GET /userinfo` with `Authorization: Bearer`
+  3. `GET /auth/v1/bookmarks` with `x-auth-token + x-client-id` (current app behaviour)
+  4. `GET /auth/v1/bookmarks` with `Authorization: Bearer + x-client-id`
+  5. Refresh token + retry `/auth/v1/bookmarks`
+- Probe results from the 2026-04-14 run: probes 1 and 2 failed CORS (userinfo doesn't set cross-origin headers), probes 3–5 all returned 403 invalid_token, probe 4 returned 400 "missing required headers" (API strictly requires `x-auth-token`, does not accept `Bearer`)
+- Kept in the repo as a permanent debugging tool, hidden from navigation
+
+### Follow-up email sent to Basit
+- Sent 2026-04-14 evening as a reply to the existing thread with him
+- Short form (~280 words): client_secret_basic is worked around with the proxy (not a blocker anymore), new audience issue identified, decoded JWT payload inline, Hydra error quoted verbatim, both client IDs listed, flexible on exact audience string
+- Awaiting response
+
+### Discord fallback attempted
+- QF Discord at `discord.gg/SpEeJ5bWEQ` — tried to post a parallel shortened version of the diagnostic there for faster response
+- Link was not accessible from user's side (possibly needed account/app/different browser)
+- Email via `developers@quran.com` (Basit's verified address) is the primary escalation channel
+
+### Mock preview data for personal pages
+- `src/lib/data/mock-personal-data.ts` — 6 sample bookmarks (Ayat al-Kursi, 94:5, 13:28, 41:34, 2:286, 55:13), 3 sample collections, 28 reading sessions distributed across the last 90 days, mock streak
+- `/bookmarks`, `/collections`, `/activity` pages all show mock data when user is not signed in OR when User API returns an error
+- Two banner variants: "Preview — sign in to see your own" and "Showing sample data while we reconnect"
+- Preview rows hide destructive actions (Remove, Delete) so they don't look clickable when pointing at fake data
+- Today Panel on `/dashboard` quietly falls back to mock streak and read-surahs counts when the User API is down, so a signed-in user never sees a broken `0 day streak`
+- **Critical:** these preview states mean the demo video can be recorded end-to-end right now, even while waiting on Basit. Every page has meaningful content.
+
+### Error UI cleanup
+- Context providers (bookmarks, collections, reading-progress) now log raw upstream error detail to `console.error` but display short user-friendly strings — no more raw 403 JSON bodies leaking into the UI
+
+### Surah Ring visual tuning
+- Camera tightened from `[0, 16, 24] fov 48` to `[0, 14, 22] fov 42` for a more cinematic, compressed-depth framing
+- Preview-mode amber overlay was tried and reverted per Bilal's feedback — clean ring without fake "read" indicators looks better when no real data is present
 
 ### Mock preview data for personal pages
 - `src/lib/data/mock-personal-data.ts` — 6 sample bookmarks (Ayat al-Kursi, 94:5, 13:28, 41:34, 2:286, 55:13), 3 sample collections, 28 reading sessions distributed across the last 90 days, mock streak
@@ -121,10 +161,11 @@ Rather than modifying the frozen Ramadan Hacks artefact, this is a parallel fork
 - Context providers (bookmarks, collections, reading-progress) now log raw upstream error detail to `console.error` but display short user-friendly strings — no more raw 403 JSON bodies leaking into the UI
 
 ### Day 3 still TODO
-- Send the follow-up email to Basit (waiting on user)
-- Record demo video (Day 6, after auth fully works)
+- Wait on Basit's response to the audience allow-list request
+- Record demo video (Day 6, using mock preview data if auth still pending)
 - Final Surah Ring visual polish iteration once real reading-session data is flowing
 - Switch to production QF client once scopes are approved (Day 5–6)
+- Draft Provision Launch submission form content (Day 5–6)
 
 ---
 
@@ -157,19 +198,22 @@ x-client-id: <client_id>
 
 ## Currently blocked on
 
-### 1. Basit's response on the 403 token audience issue (highest priority)
+### 1. Basit's response on the Hydra `allowed_audiences` fix (highest priority)
 
-Follow-up email drafted at `C:\Users\bilal\siraj-noor-email-followup.txt`. Reply to his existing thread (NOT a new message). Specific 400-vs-403 probe evidence is included so he can look at his audience/issuer claim config directly.
+Email sent 2026-04-14 evening via the existing thread on `developers@quran.com`. Ask: add `apis.quran.foundation` (or whatever the correct audience identifier is) to `allowed_audiences` on both clients so issued tokens carry a valid `aud` claim. One config change on his end unblocks the entire User API integration.
+
+Not blocking demo video recording thanks to the mock preview data fallback.
 
 ### 2. Production scope expansion (non-blocking for now)
 
-Scope request form submitted earlier today. Once approved, we flip the Cloudflare Pages Function secrets from Pre-Production to Production credentials and redeploy. Target: Day 5 or 6.
+Scope request form submitted 2026-04-14. Once approved, we flip the Cloudflare Pages Function secrets from Pre-Production to Production credentials and redeploy. Target: Day 5 or 6.
 
 ---
 
 ## Commit log so far
 
 ```
+ebefadd  Mock preview data + friendlier error UI across personal pages
 5b39cf8  Fix React #185 infinite loop in useSyncExternalStore token snapshot
 d8801cc  Day 3: landing page branding, README views + personal pages, DEPLOY rewrite
 dcb7e27  Add Pages Function proxy for confidential QF token exchange

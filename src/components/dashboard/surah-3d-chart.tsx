@@ -467,7 +467,7 @@ export function Surah3DChart() {
       <div className="relative h-[350px] w-full overflow-hidden rounded-xl border border-border bg-[#050510] md:h-[560px]">
         <Canvas
           shadows
-          camera={{ position: [0, 16, 24], fov: 48 }}
+          camera={{ position: [0, 14, 22], fov: 42 }}
           gl={{ antialias: true, alpha: false }}
           onCreated={({ gl }) => {
             gl.setClearColor("#050510");
