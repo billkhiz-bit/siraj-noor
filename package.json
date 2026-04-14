@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "rimraf .next out && next build && wrangler pages deploy out --project-name siraj-noor --branch master --commit-dirty=true",
-    "deploy:preview": "rimraf .next out && next build && wrangler pages deploy out --project-name siraj-noor --branch preview --commit-dirty=true"
+    "deploy": "rimraf .next out && next build && npx wrangler pages deploy out --project-name siraj-noor --branch master --commit-dirty=true",
+    "deploy:preview": "rimraf .next out && next build && npx wrangler pages deploy out --project-name siraj-noor --branch preview --commit-dirty=true"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
