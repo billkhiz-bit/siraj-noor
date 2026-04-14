@@ -2,6 +2,8 @@ import {
   QF_CLIENT_ID,
   QF_AUTHORIZE_URL,
   QF_TOKEN_URL,
+  QF_REFRESH_URL,
+  QF_TOKEN_USES_PROXY,
   QF_LOGOUT_URL,
   QF_SCOPES,
   getRedirectUri,
@@ -82,19 +84,31 @@ export async function completeLogin(
   // single-use. Always clear PKCE on exit so a failed exchange can't be
   // retried with the same verifier (or trigger a stale-state replay later).
   try {
-    const body = new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id: QF_CLIENT_ID,
-      code,
-      redirect_uri: pkce.redirectUri,
-      code_verifier: pkce.codeVerifier,
-    });
-
-    const response = await fetch(QF_TOKEN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: body.toString(),
-    });
+    // Two request shapes: the proxy (default) wants JSON because it's our
+    // own Pages Function, while the direct-token fallback (opt-in via
+    // NEXT_PUBLIC_QF_USE_DIRECT_TOKEN) has to speak the RFC6749 form-encoded
+    // dialect directly to QF.
+    const response = QF_TOKEN_USES_PROXY
+      ? await fetch(QF_TOKEN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code,
+            redirect_uri: pkce.redirectUri,
+            code_verifier: pkce.codeVerifier,
+          }),
+        })
+      : await fetch(QF_TOKEN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: QF_CLIENT_ID,
+            code,
+            redirect_uri: pkce.redirectUri,
+            code_verifier: pkce.codeVerifier,
+          }).toString(),
+        });
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
@@ -116,19 +130,23 @@ export async function refreshTokens(): Promise<StoredTokens | null> {
   const current = loadTokens();
   if (!current?.refreshToken) return null;
 
-  const body = new URLSearchParams({
-    grant_type: "refresh_token",
-    client_id: QF_CLIENT_ID,
-    refresh_token: current.refreshToken,
-  });
-
   let response: Response;
   try {
-    response = await fetch(QF_TOKEN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: body.toString(),
-    });
+    response = QF_TOKEN_USES_PROXY
+      ? await fetch(QF_REFRESH_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: current.refreshToken }),
+        })
+      : await fetch(QF_REFRESH_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "refresh_token",
+            client_id: QF_CLIENT_ID,
+            refresh_token: current.refreshToken,
+          }).toString(),
+        });
   } catch {
     // Network/CORS/DNS failure — keep the existing tokens so the user
     // isn't logged out by a transient connectivity blip.
