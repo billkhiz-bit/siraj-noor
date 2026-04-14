@@ -7,10 +7,24 @@ import { useReadingProgress } from "@/lib/auth/reading-progress-context";
 import { pickDailyAyah } from "@/lib/daily-ayah";
 import { fetchVerseByKey, type Verse } from "@/lib/quran-api";
 import { surahs } from "@/lib/data/surahs";
+import {
+  MOCK_STREAK,
+  MOCK_READ_SURAHS,
+} from "@/lib/data/mock-personal-data";
 
 export function TodayPanel() {
   const { isAuthenticated, isConfigured, login } = useAuth();
-  const { streak, readSurahs } = useReadingProgress();
+  const { streak: liveStreak, readSurahs: liveReadSurahs, error } =
+    useReadingProgress();
+
+  // Mirror the pattern on /activity, /bookmarks, /collections: if the user
+  // is signed in but the User API is refusing requests, show sample stats
+  // rather than zeros that look broken. The banner on the activity page
+  // makes the preview state explicit; here we keep it silent because the
+  // Today Panel is a peripheral widget, not the main view.
+  const showMockStats = !isAuthenticated || Boolean(error);
+  const streak = showMockStats ? MOCK_STREAK : liveStreak;
+  const readSurahs = showMockStats ? MOCK_READ_SURAHS : liveReadSurahs;
 
   const daily = useMemo(() => pickDailyAyah(), []);
   const surah = useMemo(

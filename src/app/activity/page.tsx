@@ -5,11 +5,33 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { Activity3D } from "@/components/dashboard/activity-3d";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useReadingProgress } from "@/lib/auth/reading-progress-context";
+import {
+  MOCK_READING_SESSIONS,
+  MOCK_STREAK,
+  MOCK_READ_SURAHS,
+} from "@/lib/data/mock-personal-data";
+
+type DisplayMode = "loading" | "preview-signed-out" | "preview-api-down" | "live";
 
 export default function ActivityPage() {
   const { isAuthenticated, isReady, login } = useAuth();
   const { sessions, streak, readSurahs, isLoading, error } =
     useReadingProgress();
+
+  const mode: DisplayMode = !isReady
+    ? "loading"
+    : !isAuthenticated
+      ? "preview-signed-out"
+      : error
+        ? "preview-api-down"
+        : "live";
+
+  const isPreview =
+    mode === "preview-signed-out" || mode === "preview-api-down";
+
+  const displaySessions = isPreview ? MOCK_READING_SESSIONS : sessions;
+  const displayStreak = isPreview ? MOCK_STREAK : streak;
+  const displayReadSurahs = isPreview ? MOCK_READ_SURAHS : readSurahs;
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
@@ -25,22 +47,44 @@ export default function ActivityPage() {
           </p>
         </header>
 
-        {!isReady ? (
-          <div className="h-[400px] animate-pulse rounded-xl bg-card/40" />
-        ) : !isAuthenticated ? (
-          <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
-            <p className="mb-3">
-              Sign in to start tracking your reading streak. Each surah you
-              open adds a session — your streak builds automatically.
+        {mode === "preview-signed-out" && (
+          <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-4 text-sm">
+            <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400">
+              Preview
+            </div>
+            <p className="mb-3 text-foreground/90">
+              This is a sample Activity view — a full-year 3D heatmap of reading
+              sessions. Sign in with Quran.com to replace the sample data with
+              your own streak and session history.
             </p>
             <button
               type="button"
               onClick={() => login("/activity")}
-              className="rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-black hover:bg-amber-400"
+              className="rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-amber-400"
             >
               Sign in with Quran.com
             </button>
           </div>
+        )}
+
+        {mode === "preview-api-down" && (
+          <div
+            role="alert"
+            className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-4 text-sm"
+          >
+            <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400">
+              Showing sample data
+            </div>
+            <p className="text-foreground/90">
+              Couldn&apos;t reach Quran Foundation just now, so we&apos;re
+              showing a sample activity profile below. Your real sessions and
+              streak will reappear as soon as the connection recovers.
+            </p>
+          </div>
+        )}
+
+        {mode === "loading" ? (
+          <div className="h-[400px] animate-pulse rounded-xl bg-card/40" />
         ) : (
           <>
             {/* Stats grid */}
@@ -50,10 +94,10 @@ export default function ActivityPage() {
                   Current streak
                 </p>
                 <p className="mt-1 font-mono text-3xl font-bold text-amber-500">
-                  {streak.current}
+                  {displayStreak.current}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  day{streak.current === 1 ? "" : "s"}
+                  day{displayStreak.current === 1 ? "" : "s"}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-card p-4">
@@ -61,10 +105,10 @@ export default function ActivityPage() {
                   Longest streak
                 </p>
                 <p className="mt-1 font-mono text-3xl font-bold text-foreground">
-                  {streak.longest}
+                  {displayStreak.longest}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  day{streak.longest === 1 ? "" : "s"}
+                  day{displayStreak.longest === 1 ? "" : "s"}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-card p-4">
@@ -72,46 +116,39 @@ export default function ActivityPage() {
                   Sessions logged
                 </p>
                 <p className="mt-1 font-mono text-3xl font-bold text-foreground">
-                  {sessions.length}
+                  {displaySessions.length}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  total reads
-                </p>
+                <p className="text-xs text-muted-foreground">total reads</p>
               </div>
               <div className="rounded-lg border border-border bg-card p-4">
                 <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                   Surahs visited
                 </p>
                 <p className="mt-1 font-mono text-3xl font-bold text-foreground">
-                  {readSurahs.size}
+                  {displayReadSurahs.size}
                   <span className="ml-1 text-base text-muted-foreground">
                     /114
                   </span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {Math.round((readSurahs.size / 114) * 100)}% of the
+                  {Math.round((displayReadSurahs.size / 114) * 100)}% of the
                   mushaf
                 </p>
               </div>
             </div>
 
-            {/* Heatmap */}
-            {isLoading ? (
-              <div className="h-[400px] animate-pulse rounded-xl bg-card/40" />
-            ) : error ? (
-              <div
-                role="alert"
-                className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-6 text-sm text-rose-200"
-              >
-                {error}
-              </div>
-            ) : (
-              <>
-                <Activity3D sessions={sessions} />
-                <p className="mt-3 text-xs text-muted-foreground/70">
-                  Every cell is one day in the past year. Bar height and amber
-                  intensity = number of reading sessions logged. Hover a cell
-                  for details. The brightest cell is today.{" "}
+            <Activity3D sessions={displaySessions} />
+
+            <p className="mt-3 text-xs text-muted-foreground/70">
+              Every cell is one day in the past year. Bar height and amber
+              intensity = number of reading sessions logged. Hover a cell for
+              details. The brightest cell is today.{" "}
+              {!isAuthenticated ? (
+                <>
+                  Sign in above to start building your own streak.
+                </>
+              ) : (
+                <>
                   <Link
                     href="/dashboard"
                     className="text-amber-500 underline-offset-4 hover:underline"
@@ -119,9 +156,9 @@ export default function ActivityPage() {
                     Read a surah
                   </Link>{" "}
                   to add to your streak.
-                </p>
-              </>
-            )}
+                </>
+              )}
+            </p>
           </>
         )}
       </main>

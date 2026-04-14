@@ -1,10 +1,10 @@
 # Siraj Noor — Quran Foundation Hackathon Progress
 
 **Submission deadline:** 2026-04-20 (Provision Launch × Quran Foundation Hackathon, $10k pool, 7 winners)
-**Today:** 2026-04-13 (Day 1 of 7)
-**HEAD:** `3e235b9` on `master` of `billkhiz-bit/siraj-noor` (private)
+**Current:** 2026-04-14, end of Day 2 / start of Day 3
+**Live URL:** https://siraj-noor.pages.dev
+**Repo:** `billkhiz-bit/siraj-noor` (private until Day 6)
 **Local:** `C:\Users\bilal\projects\siraj-noor`
-**Live URL:** *pending Cloudflare Pages link*
 
 ---
 
@@ -18,7 +18,7 @@ Rather than modifying the frozen Ramadan Hacks artefact, this is a parallel fork
 
 ---
 
-## Day 1 — done
+## Day 1 — done (2026-04-13)
 
 ### Repo + infra
 - Forked from `ayat/` baseline via `git archive` (only tracked files, no build artefacts)
@@ -26,70 +26,105 @@ Rather than modifying the frozen Ramadan Hacks artefact, this is a parallel fork
 - 8 commits pushed, `npm install`, `tsc --noEmit`, `eslint`, `next build` all green
 - 131 static pages generating cleanly
 
-### Architecture additions
+### Option 3 features scaffolded
+- OAuth 2.0 PKCE flow (intended public client)
+- User API client with auto-refresh on 401, `x-auth-token` + `x-client-id` headers
+- Bookmarks, Reading sessions, Streaks, Activity 3D (tenth view), Reflections composer, Collections
+- Sidebar reorganised into **Explore** / **Personal** sections
 
-```
-src/
-  app/
-    activity/page.tsx              ← 10th 3D view (heatmap)
-    auth/callback/page.tsx         ← OAuth PKCE redirect handler
-    bookmarks/page.tsx             ← saved ayahs list
-    collections/page.tsx           ← create + 3D shelf
-  components/
-    auth/
-      bookmark-button.tsx          ← client island on each verse card
-      reading-tracker.tsx          ← fire-and-forget session log on surah mount
-      reflection-button.tsx        ← dialog composer for /posts API
-      today-panel.tsx              ← Ayah of the Day + streak on /dashboard
-      user-menu.tsx                ← sidebar sign-in / signed-in / sign-out
-    dashboard/
-      activity-3d.tsx              ← 7×52 extruded calendar heatmap
-      surah-3d-chart.tsx           ← MODIFIED: read-surah amber overlay
-      sidebar.tsx                  ← MODIFIED: Explore/Personal split + UserMenu
-  lib/
-    auth/
-      auth-context.tsx             ← useSyncExternalStore over localStorage
-      bookmarks-context.tsx        ← provider with optimistic toggle
-      collections-context.tsx      ← provider with optimistic CRUD
-      reading-progress-context.tsx ← provider with sessions + streak
-      config.ts                    ← endpoints + env var reads
-      pkce.ts                      ← Web Crypto S256 PKCE pair
-      qf-oauth.ts                  ← begin/complete/refresh/logout
-      storage.ts                   ← tokens + listener registry
-    daily-ayah.ts                  ← deterministic date-seeded ayah picker
-    qf-user-api.ts                 ← bookmarks/collections/sessions/streaks/posts
-    quran-api.ts                   ← MODIFIED: added fetchVerseByKey
-```
+### Day 1 hardening from preflight
+- Open redirect blocked on `/auth/callback`
+- PKCE state cleared in `finally` after token exchange
+- `refreshTokens` only clears tokens on 4xx (not transient 5xx)
+- Optimistic-update revert race fixed across all 3 contexts
+- `Promise.allSettled` on reading-progress fan-out
+- Accessibility: 44×44px touch targets, `role=img`/`aria-label` on Activity canvas, etc.
 
-### Features shipped (option 3 in full)
-- ✅ OAuth 2.0 PKCE (browser-only public client, no backend)
-- ✅ User API client with auto-refresh on 401, custom `x-auth-token` + `x-client-id` headers
-- ✅ Bookmarks: per-verse button, list page, optimistic toggle, surah ring indicators
-- ✅ Reading sessions: fire-and-forget tracker on each `/surah/[id]` mount
-- ✅ Reading progress overlay on the Surah Ring (read surahs glow amber + base ring)
-- ✅ Today panel on `/dashboard`: Ayah of the Day (date-deterministic) + streak counter + "n of 114 surahs visited"
-- ✅ Activity dashboard 10th 3D view (`/activity`): 7×52 extruded heatmap
-- ✅ Reflections: dialog composer next to every verse, posts via Posts API
-- ✅ Collections: provider, create form, CSS-perspective shelf with delete
-- ✅ Sidebar reorganised into **Explore** vs **Personal** sections
+---
 
-### Hardening done after preflight + specialist review
+## Day 2 — done (2026-04-14 morning/afternoon)
 
-**Security:**
-- Open redirect blocked on `/auth/callback` (`//evil.com` style protocol-relative URLs rejected)
-- PKCE state cleared in `finally` after token exchange (was leaking on failure)
-- `refreshTokens` only clears tokens on 4xx, not transient 5xx (was logging users out on hiccups)
-- Optimistic update revert race fixed across all 3 contexts (functional reverts target only the affected item)
-- Reading progress uses `Promise.allSettled` so partial failures surface instead of silently showing empty data
+### Visual polish
+- **Activity 3D camera** retuned to `[14, 15, 22] fov 42` with orbit damping; today cell pulses on a sine wave
+- **Surah Ring read-marker ring** now pulses with a per-surah phase offset (travelling wave around the ring), radius bumped, `toneMapped=false` so bloom catches the amber peak
+- **Landing page hero** split into SIRAJ / NOOR with responsive sizing, Arabic extends to سراج نور
 
-**Accessibility:**
-- Touch targets bumped to 44×44px on mobile (WCAG 2.5.5)
-- `role="img" aria-label` on Activity 3D canvas + sr-only summary of busiest day
-- `role="status" aria-live="polite"` + `aria-describedby` on reflection composer
-- Visually-hidden form labels on collections create form
-- `role="alert"` on error banners (bookmarks, collections, activity)
-- `motion-safe:` gating on collection card hover-lift
-- aria-labels formatted as "surah 2, ayah 255" instead of raw "2:255"
+### Docs + legal
+- `/privacy/` and `/terms/` static pages created (QF registration needs real URLs)
+- `DEPLOY.md` runbook written (wrangler CLI first approach, two-client-id pattern, Pages Function secrets, smoke-test curl commands)
+- `DEMO_SCRIPT.md` beat-sheet drafted for the 2:30 submission video
+- `README.md` Views table rewritten with **Ten 3D visualisation views** + separate **Personal companion pages** section
+
+### Deploy pipeline
+- Cloudflare Pages project `siraj-noor` created via `wrangler pages project create`
+- `npm run deploy` script wired: `rimraf .next out && next build && wrangler pages deploy out ...`
+- `.env.production` committed with prod QF host URLs (public, no secrets)
+- `.env.local.example` surfaced from the blanket `.env*` gitignore
+- First production deploy verified — all six critical URLs return 200
+
+### QF API onboarding
+- `/request-access` form submitted with app description, 10-view feature list, callback URL, ToS/privacy URLs
+- Scope request form submitted via the developer portal
+- Follow-up email sent to `developers@quran.com` asking for `token_endpoint_auth_method=none`
+
+### QF approvals received
+- Pre-Production client ID: `3d0bebd0-110c-44bb-a097-746cf6a9615b` (all scopes enabled)
+- Production client ID: `80ace9be-6835-4304-bb52-67b1bd891ff2` (Content API only; user scopes pending approval)
+- Basit Minhas added the production callback URL to the pre-live client the same afternoon
+- Both clients shipped with `client_secret_basic` auth — **our SPA cannot ship the secret**
+
+### Pages Function proxy
+- `functions/api/qf/token.ts` and `functions/api/qf/refresh.ts` created
+- Reads `QF_CLIENT_ID` + `QF_CLIENT_SECRET` from Cloudflare Pages env (set via `wrangler pages secret put`)
+- Builds `Authorization: Basic base64(id:secret)` header, forwards to QF token endpoint
+- Browser posts JSON to `/api/qf/token`, proxy forwards form-encoded request to QF
+- Smoke-tested: `invalid_grant` returned on fake codes (proving client auth succeeds), `405 method_not_allowed` on GET
+
+### Critical bug found and fixed: React #185 infinite loop
+- `loadTokens()` in `src/lib/auth/storage.ts` was doing `JSON.parse(localStorage.getItem(...))` on every call, returning a fresh object reference each time
+- `AuthProvider` passes `loadTokens` to `useSyncExternalStore` as the snapshot function
+- React compares snapshots by reference → fresh object every call → infinite re-render → "Maximum update depth exceeded" (minified error #185)
+- Only manifested **after** sign-in (empty localStorage → `null === null` stable, tokens present → parse fresh every call → loop)
+- Fix: cache parsed tokens keyed on the raw localStorage string; invalidate on `saveTokens` / `clearTokens` / cross-tab storage event
+- Memory saved at `~/.claude/projects/.../memory/react_use_sync_external_store_snapshot_cache.md` so future sessions don't repeat this
+
+### Error boundaries
+- `src/app/auth/callback/error.tsx` — route-level boundary for OAuth callback
+- `src/app/error.tsx` — app-level boundary for non-layout crashes
+- `src/app/global-error.tsx` — root-layout boundary (only place React #185 was catchable)
+- All three display error name, message, stack, and Next.js digest for actionable debugging
+
+### First successful sign-in
+- Verified end-to-end via Google OAuth on prelive.auth.quran.com (the email verification code path is broken on prelive — Google OAuth bypasses it)
+- Token exchange through the Pages Function proxy works correctly
+- Tokens save to localStorage, auth context flips, providers fire
+
+---
+
+## Day 3 — in progress (2026-04-14 evening)
+
+### New blocker discovered
+- After successful sign-in, all User API calls to `apis.quran.foundation/auth/v1/*` return **403 invalid_token "The access token is expired or inactive"**
+- Token is freshly issued, not actually expired
+- Confirmed via probe that the API correctly distinguishes "malformed JWT" (400) from "valid JWT but rejected" (403) — our token gets the second error
+- Likely cause: audience/issuer mismatch between the prelive OAuth server and the shared `apis.quran.foundation` resource server
+- Follow-up email drafted for Basit with specific 400-vs-403 diagnostic evidence, pending send
+
+### Mock preview data for personal pages
+- `src/lib/data/mock-personal-data.ts` — 6 sample bookmarks (Ayat al-Kursi, 94:5, 13:28, 41:34, 2:286, 55:13), 3 sample collections, 28 reading sessions distributed across the last 90 days, mock streak
+- `/bookmarks`, `/collections`, `/activity` pages all show mock data when user is not signed in OR when User API returns an error
+- Two banner variants: "Preview — sign in to see your own" and "Showing sample data while we reconnect"
+- Preview rows hide destructive actions (Remove, Delete) so they don't look clickable when pointing at fake data
+- Today Panel on `/dashboard` quietly falls back to mock streak and read-surahs counts when the User API is down, so a signed-in user never sees a broken `0 day streak`
+
+### Error UI cleanup
+- Context providers (bookmarks, collections, reading-progress) now log raw upstream error detail to `console.error` but display short user-friendly strings — no more raw 403 JSON bodies leaking into the UI
+
+### Day 3 still TODO
+- Send the follow-up email to Basit (waiting on user)
+- Record demo video (Day 6, after auth fully works)
+- Final Surah Ring visual polish iteration once real reading-session data is flowing
+- Switch to production QF client once scopes are approved (Day 5–6)
 
 ---
 
@@ -99,12 +134,13 @@ Full reference is in `~/.claude/projects/C--Users-bilal-projects-ayat/memory/qur
 
 | Endpoint | URL |
 |---|---|
-| Registration portal | https://api-docs.quran.foundation/request-access |
-| Authorize | `https://oauth2.quran.foundation/oauth2/auth` |
-| Token | `https://oauth2.quran.foundation/oauth2/token` |
-| Logout | `https://oauth2.quran.foundation/oauth2/sessions/logout` |
-| Sandbox | `prelive-oauth2.quran.foundation` (same paths) |
+| Developer portal | https://api-docs.quran.foundation/request-access |
+| Authorize (prelive) | `https://prelive-oauth2.quran.foundation/oauth2/auth` |
+| Token (prelive) | `https://prelive-oauth2.quran.foundation/oauth2/token` |
+| Logout (prelive) | `https://prelive-oauth2.quran.foundation/oauth2/sessions/logout` |
+| Production host | `oauth2.quran.foundation` (same paths) |
 | User API base | `https://apis.quran.foundation/auth/v1/` |
+| Support email | `developers@quran.com` (verified from qf-api-docs repo) |
 
 **Headers (NOT standard Bearer):**
 ```
@@ -112,89 +148,39 @@ x-auth-token: <access_token>
 x-client-id: <client_id>
 ```
 
-**PKCE:** ✅ public client supported. **Access token:** 3600s. **Refresh:** via `offline_access` scope.
+**Pre-Production client:** `3d0bebd0-110c-44bb-a097-746cf6a9615b` (all scopes, secret stored in Pages Function env)
+**Production client:** `80ace9be-6835-4304-bb52-67b1bd891ff2` (content-only until scope expansion approved)
 
-**Scopes used:** `openid offline_access user bookmark collection reading_session goal streak post`
-
----
-
-## Now blocked on you
-
-### 1. Register the API client at https://api-docs.quran.foundation/request-access
-
-Fields:
-- **App Name:** `Siraj Noor`
-- **Email:** your usual
-- **Client URL:** `https://siraj-noor.pages.dev` (doesn't need to exist yet)
-- **Redirect URIs (both):**
-  - `http://localhost:3000/auth/callback/` ← trailing slash REQUIRED (`next.config.ts` has `trailingSlash: true`)
-  - `https://siraj-noor.pages.dev/auth/callback/` ← trailing slash REQUIRED
-- **Post-logout redirect URI:** `https://siraj-noor.pages.dev/`
-- **Privacy Policy / ToS:** point at the README or use placeholders, ask if rejected
-- **Scopes:** request the full set in one go to avoid re-approval — `openid offline_access user bookmark collection reading_session goal streak post`
-- **Client type:** pick **Public / SPA / PKCE** if offered (no client secret needed)
-- **Notes box:** "This is for the Quran Foundation Hackathon 2026 (Provision Launch). Submission deadline Apr 20 — appreciate expedited review if possible."
-- **Support email if delayed:** `Hackathon@quran.com`
-
-**Action:** reply with the `client_id` as soon as you receive it.
-
-### 2. Create the Cloudflare Pages project
-
-- Linked to GitHub repo `billkhiz-bit/siraj-noor`, branch `master`
-- **Build command:** `npx next build`
-- **Build output directory:** `out`
-- **Environment variables (Production AND Preview):**
-  - `NEXT_PUBLIC_QF_CLIENT_ID` = your client_id from step 1
-  - `NEXT_PUBLIC_QF_AUTH_HOST` = `https://oauth2.quran.foundation` (production only — leave UNSET for sandbox)
-  - `NEXT_PUBLIC_QF_API_HOST` = `https://apis.quran.foundation` (default, only set if you need to override)
-
-### 3. Local `.env.local` for development
-
-```dotenv
-NEXT_PUBLIC_QF_CLIENT_ID=<your_client_id>
-# Defaults to prelive sandbox if these are unset:
-# NEXT_PUBLIC_QF_AUTH_HOST=https://prelive-oauth2.quran.foundation
-# NEXT_PUBLIC_QF_API_HOST=https://apis.quran.foundation
-```
-
-A template is at `.env.local.example` in the repo root.
+**Scopes requested:** `openid offline_access user bookmark collection reading_session goal streak post`
 
 ---
 
-## Days 2–7 plan
+## Currently blocked on
 
-| Day | Date | Goals |
-|---|---|---|
-| 2 | Apr 14 | Live test against prelive sandbox once `client_id` is in. Fix any API-shape mismatches. Polish empty/error states based on real responses. |
-| 3 | Apr 15 | Iterate on visuals — Activity 3D camera, surah ring read indicator, Today panel layout. Real device testing. |
-| 4 | Apr 16 | Switch `NEXT_PUBLIC_QF_AUTH_HOST` to prod. Deploy to `siraj-noor.pages.dev`. End-to-end test on the live URL. |
-| 5 | Apr 17 | Stretch features if time permits — bookmark→collection assignment, reflection feed on /bookmarks, reading goals UI. |
-| 6 | Apr 18 | Record 2–3 min demo video. Draft submission copy. |
-| 7 | Apr 19 | Submit via Provision Launch form (24h buffer before Apr 20 deadline). |
+### 1. Basit's response on the 403 token audience issue (highest priority)
 
----
+Follow-up email drafted at `C:\Users\bilal\siraj-noor-email-followup.txt`. Reply to his existing thread (NOT a new message). Specific 400-vs-403 probe evidence is included so he can look at his audience/issuer claim config directly.
 
-## Submission checklist (Provision Launch form)
+### 2. Production scope expansion (non-blocking for now)
 
-- [ ] Project title: `Siraj Noor`
-- [ ] Team members: solo (Bilal Khan)
-- [ ] Short description (1–2 sentences)
-- [ ] Detailed explanation of the idea
-- [ ] Live demo link (`siraj-noor.pages.dev` — once deployed)
-- [ ] GitHub repo (`billkhiz-bit/siraj-noor` — needs to be made public OR add Provision Launch as collaborator before submission)
-- [ ] 2–3 minute demo video
-- [ ] API usage description (name every Quran Foundation Content + User endpoint hit)
+Scope request form submitted earlier today. Once approved, we flip the Cloudflare Pages Function secrets from Pre-Production to Production credentials and redeploy. Target: Day 5 or 6.
 
 ---
 
 ## Commit log so far
 
 ```
+5b39cf8  Fix React #185 infinite loop in useSyncExternalStore token snapshot
+d8801cc  Day 3: landing page branding, README views + personal pages, DEPLOY rewrite
+dcb7e27  Add Pages Function proxy for confidential QF token exchange
+13cd228  Wire up Cloudflare Pages deploy — first production build is live
+c76491f  Day 2 handoff: visual polish, deploy scaffolding, legal pages, demo beat sheet
+1d2a713  Add HACKATHON_PROGRESS.md as Day 1 handoff snapshot
 3e235b9  Security and accessibility hardening from preflight review
 b7c822e  Refactor auth context to useSyncExternalStore for token sync
 73e5495  Add reflection composer dialog and collections shelf
 3b12c3a  Add Activity dashboard as the 10th 3D view
-4dca337  Add reading progress overlay on Surah Ring, Today panel, reading session tracking
+4dca337  Add reading progress overlay on Surah Ring, Today panel, and reading session tracking
 f9a6852  Add bookmark button, optimistic bookmarks context, and bookmarks list page
 3522616  Add Quran Foundation OAuth PKCE flow and User API scaffolding
 a90c1f4  Fork from siraj for Quran Foundation Hackathon submission
@@ -202,6 +188,6 @@ a90c1f4  Fork from siraj for Quran Foundation Hackathon submission
 
 ---
 
-## Why nothing was committed to the original `ayat/` repo
+## Why nothing is committed to the original `ayat/` repo
 
-The original `C:\Users\bilal\projects\ayat` (`billkhiz-bit/siraj`) is the frozen Ramadan Hacks 2026 artefact. Modifying it would alter the URL judges from that hackathon may have visited, change the README narrative, and risk introducing a regression to a working deployed site. All hackathon-2 work happens in this fork. If you want to mirror this progress doc to that repo as well, say so and I'll do it — but my recommendation is to leave `ayat/` untouched.
+The original `C:\Users\bilal\projects\ayat` (`billkhiz-bit/siraj`) is the frozen Ramadan Hacks 2026 artefact. Modifying it would alter the URL judges from that hackathon may have visited, change the README narrative, and risk introducing a regression to a working deployed site. All hackathon-2 work happens in this fork.

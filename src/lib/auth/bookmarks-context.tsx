@@ -41,9 +41,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       const data = await qfApi.listBookmarks();
       setBookmarks(data.bookmarks ?? []);
     } catch (err) {
-      const message =
-        err instanceof QfApiError ? err.message : "Failed to load bookmarks";
-      setError(message);
+      // Log the raw upstream detail to the console so it's available for
+      // debugging, but show a short, user-friendly message in the UI.
+      console.error("[BookmarksProvider] load failed:", err);
+      setError(
+        err instanceof QfApiError && err.status === 401
+          ? "Sign-in session expired — sign in again."
+          : "Couldn't load your bookmarks right now."
+      );
     } finally {
       setIsLoading(false);
     }

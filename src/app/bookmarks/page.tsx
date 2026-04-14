@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useBookmarks } from "@/lib/auth/bookmarks-context";
 import { surahs } from "@/lib/data/surahs";
+import { MOCK_BOOKMARKS } from "@/lib/data/mock-personal-data";
+import type { Bookmark } from "@/lib/qf-user-api";
 
 function parseVerseKey(key: string): { chapter: number; verse: number } | null {
   const [c, v] = key.split(":").map((part) => parseInt(part, 10));
@@ -12,9 +14,28 @@ function parseVerseKey(key: string): { chapter: number; verse: number } | null {
   return { chapter: c, verse: v };
 }
 
+type DisplayMode = "loading" | "preview-signed-out" | "preview-api-down" | "empty" | "live";
+
 export default function BookmarksPage() {
   const { isAuthenticated, isReady, login } = useAuth();
   const { bookmarks, isLoading, error, toggle } = useBookmarks();
+
+  const mode: DisplayMode = !isReady
+    ? "loading"
+    : !isAuthenticated
+      ? "preview-signed-out"
+      : error
+        ? "preview-api-down"
+        : isLoading
+          ? "loading"
+          : bookmarks.length === 0
+            ? "empty"
+            : "live";
+
+  const displayBookmarks: Bookmark[] =
+    mode === "preview-signed-out" || mode === "preview-api-down"
+      ? MOCK_BOOKMARKS
+      : bookmarks;
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
@@ -30,35 +51,50 @@ export default function BookmarksPage() {
           </p>
         </header>
 
-        {!isReady ? (
-          <div className="h-32 animate-pulse rounded-lg bg-card/40" />
-        ) : !isAuthenticated ? (
-          <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
-            <p className="mb-3">
-              Sign in to save ayahs and have them follow you across devices.
+        {/* Preview banner — only appears in preview modes */}
+        {mode === "preview-signed-out" && (
+          <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-4 text-sm">
+            <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400">
+              Preview
+            </div>
+            <p className="mb-3 text-foreground/90">
+              Here&apos;s what Bookmarks looks like once you start saving ayahs.
+              Sign in with your Quran.com account to replace this preview with
+              your real saves, synced across devices.
             </p>
             <button
               type="button"
               onClick={() => login("/bookmarks")}
-              className="rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-black hover:bg-amber-400"
+              className="rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-amber-400"
             >
               Sign in with Quran.com
             </button>
           </div>
-        ) : isLoading ? (
+        )}
+
+        {mode === "preview-api-down" && (
+          <div
+            role="alert"
+            className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-4 text-sm"
+          >
+            <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400">
+              Showing sample data
+            </div>
+            <p className="text-foreground/90">
+              Couldn&apos;t reach Quran Foundation just now, so we&apos;re
+              showing sample bookmarks below. Your real saves will reappear
+              automatically as soon as the connection recovers.
+            </p>
+          </div>
+        )}
+
+        {mode === "loading" ? (
           <div className="space-y-3">
             <div className="h-20 animate-pulse rounded-lg bg-card/40" />
             <div className="h-20 animate-pulse rounded-lg bg-card/40" />
             <div className="h-20 animate-pulse rounded-lg bg-card/40" />
           </div>
-        ) : error ? (
-          <div
-            role="alert"
-            className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-6 text-sm text-rose-200"
-          >
-            {error}
-          </div>
-        ) : bookmarks.length === 0 ? (
+        ) : mode === "empty" ? (
           <div className="rounded-lg border border-dashed border-border bg-card/40 p-10 text-center text-sm text-muted-foreground">
             <p className="mb-2 text-base text-foreground">No bookmarks yet</p>
             <p>
@@ -74,11 +110,14 @@ export default function BookmarksPage() {
           </div>
         ) : (
           <ul className="space-y-3">
-            {bookmarks.map((bookmark) => {
+            {displayBookmarks.map((bookmark) => {
               const parsed = parseVerseKey(bookmark.verse_key);
               const surah = parsed
                 ? surahs.find((s) => s.number === parsed.chapter)
                 : null;
+              const isPreviewRow =
+                mode === "preview-signed-out" || mode === "preview-api-down";
+
               return (
                 <li
                   key={bookmark.id}
@@ -109,13 +148,15 @@ export default function BookmarksPage() {
                           Open
                         </Link>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => toggle(bookmark.verse_key)}
-                        className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-rose-500/40 hover:text-rose-400"
-                      >
-                        Remove
-                      </button>
+                      {!isPreviewRow && (
+                        <button
+                          type="button"
+                          onClick={() => toggle(bookmark.verse_key)}
+                          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-rose-500/40 hover:text-rose-400"
+                        >
+                          Remove
+                        </button>
+                      )}
                     </div>
                   </div>
                 </li>

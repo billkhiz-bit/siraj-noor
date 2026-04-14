@@ -60,6 +60,10 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
       if (sessionsResult.status === "fulfilled") {
         setSessions(sessionsResult.value.reading_sessions ?? []);
       } else {
+        console.error(
+          "[ReadingProgressProvider] sessions fetch failed:",
+          sessionsResult.reason
+        );
         failures.push("reading sessions");
       }
 
@@ -69,6 +73,10 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
           longest: streakResult.value.longest_streak ?? 0,
         });
       } else {
+        console.error(
+          "[ReadingProgressProvider] streak fetch failed:",
+          streakResult.reason
+        );
         failures.push("streak");
       }
 
@@ -76,11 +84,12 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
         setError(`Couldn't load ${failures.join(" and ")}`);
       }
     } catch (err) {
-      const message =
-        err instanceof QfApiError
-          ? err.message
-          : "Failed to load reading progress";
-      setError(message);
+      console.error("[ReadingProgressProvider] reload threw:", err);
+      setError(
+        err instanceof QfApiError && err.status === 401
+          ? "Sign-in session expired — sign in again."
+          : "Couldn't load your reading progress right now."
+      );
     } finally {
       setIsLoading(false);
     }

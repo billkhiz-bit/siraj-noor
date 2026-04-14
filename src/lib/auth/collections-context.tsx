@@ -45,11 +45,15 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
       const data = await qfApi.listCollections();
       setCollections(data.collections ?? []);
     } catch (err) {
-      const message =
-        err instanceof QfApiError
-          ? err.message
-          : "Failed to load collections";
-      setError(message);
+      // Log the raw upstream detail to the console so it's available for
+      // debugging, but show a short, user-friendly message in the UI
+      // (the raw 403 JSON body is unpleasant to look at on every sign-in).
+      console.error("[CollectionsProvider] load failed:", err);
+      setError(
+        err instanceof QfApiError && err.status === 401
+          ? "Sign-in session expired — sign in again."
+          : "Couldn't load your collections right now."
+      );
     } finally {
       setIsLoading(false);
     }
