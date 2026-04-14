@@ -103,15 +103,18 @@ export function LandingPage() {
           Illuminating the Qur&apos;an &amp; Hadith
         </p>
         <h1
-          className="mt-4 font-mono text-7xl font-bold tracking-tight text-amber-500 md:text-8xl"
+          className="mt-4 font-mono font-bold leading-none tracking-tight text-amber-500"
           style={{
             textShadow: "0 0 40px rgba(245, 158, 11, 0.3), 0 0 80px rgba(245, 158, 11, 0.1)",
           }}
         >
-          SIRAJ
+          <span className="block text-7xl md:text-8xl">SIRAJ</span>
+          <span className="mt-2 block text-5xl md:text-6xl text-amber-500/90">
+            NOOR
+          </span>
         </h1>
-        <p className="mt-2 text-center text-2xl text-muted-foreground/60" dir="rtl" style={{ fontFamily: "serif" }}>
-          سراج
+        <p className="mt-3 text-center text-2xl text-muted-foreground/60" dir="rtl" style={{ fontFamily: "serif" }}>
+          سراج نور
         </p>
         <p className="mt-1 font-mono text-xs text-muted-foreground/40">
           &ldquo;We sent you as a shining lamp&rdquo; (33:46)

@@ -16,18 +16,29 @@ Most Islamic apps focus on reading and listening. Siraj Noor lets you *see* the 
 
 ## Views
 
+### Ten 3D visualisation views
+
 | View | Description |
 |------|-------------|
-| **Surah Structure** | 114 surahs as glowing 3D cylinders in a ring. Height = ayat count. Cyan = Meccan, violet = Medinan. Sort by canonical, revelation, or length order. |
-| **Surah Detail** | Click any surah for Arabic text, English translation (Sahih International), transliteration, and a 3D verse structure chart. Click-to-pin any ayah. |
+| **Surah Structure** | 114 surahs as glowing 3D cylinders in a ring. Height = ayat count. Cyan = Meccan, violet = Medinan. Sort by canonical, revelation, or length order. Read surahs glow amber with a pulsing base ring once you've visited them. |
 | **Word Frequency** | Key Qur'anic terms as a 3D floating word cloud. Click any word to search for ayahs containing it via the Qur'an.com API. |
-| **Isnad Network** | Hadith narrator chains from the Prophet to the Tabi' al-Tabi'in. Click any node for their biography, titles, and key events. |
+| **Isnad Network** | Hadith narrator chains from the Prophet ﷺ to the Tabi' al-Tabi'in. Click any node for their biography, titles, and key events. |
 | **Prophet Timeline** | 25 prophets in the Qur'an arranged chronologically. Click for their story and surah references. |
 | **Hadith Explorer** | 6 canonical collections compared as 3D towers. Click for topic breakdown and sample hadiths. |
 | **Revelation Map** | Real map showing Makkah (86 Meccan surahs) and Madinah (28 Medinan surahs) with toggleable layers. Click any surah dot to explore. |
 | **Islamic Journeys** | 10 historical routes from 615-632 CE with waypoints, key figures, and biographies. View all routes simultaneously or individually. |
 | **Names of Allah** | 99 Names arranged in a 3D sphere with Allah at the centre. Filter by Jamal (Beauty), Jalal (Majesty), or Kamal (Perfection). |
 | **Sacred Sites** | 5 wireframe 3D models of holy sites: Masjid al-Nabawi, Mount Uhud, Cave of Hira, Cave of Thawr, and the Plain of Arafat. Interactive annotations, particle overlays, elevation profiles, compass, and Qur'anic references. |
+| **Activity** *(new in Siraj Noor)* | Full-year 7×52 3D heatmap of your reading sessions. Every cell is a day, bar height and amber intensity represent session count. Powered by the Quran Foundation `reading_session` scope — no local storage, no fake data. |
+
+### Personal companion pages
+
+| Page | Description |
+|------|-------------|
+| **Surah Detail** | Click any surah from the Surah Structure ring for Arabic text, English translation (Sahih International), transliteration, and a 3D verse structure chart. Click-to-pin any ayah, bookmark any verse, reflect on any verse. |
+| **Today Panel** | Dashboard header showing a date-deterministic Ayah of the Day, your current streak, and how much of the mushaf you've visited this year. Powered by the `reading_session` and `streak` scopes. |
+| **Bookmarks** | Dedicated list view of every ayah you've saved. Click a bookmark to jump back to its surah. Stored on your Quran.com account via the `bookmark` scope. |
+| **Collections** | Themed groupings of bookmarks rendered as a CSS-perspective 3D shelf. Name a collection, drop saved ayahs into it. Synced via the `collection` scope. |
 
 ## Mobile Responsive
 

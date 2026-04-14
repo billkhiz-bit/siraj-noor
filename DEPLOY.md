@@ -23,44 +23,63 @@ break sign-in.
 
 ## 2. Create the Cloudflare Pages project (one-time)
 
-Two routes — pick whichever is faster for the moment.
-
-### Option A · Create via the Cloudflare dashboard (recommended)
-
-1. Go to `https://dash.cloudflare.com` → Workers & Pages → Create → Pages → Connect to Git.
-2. Select `billkhiz-bit/siraj-noor`. If the repo is private, Cloudflare will
-   prompt you to install the Cloudflare GitHub App and grant it access.
-3. Framework preset: **Next.js (Static HTML Export)**. This populates the
-   build command and output directory automatically.
-4. Environment variables (set on **both** Production and Preview environments
-   — Cloudflare treats them separately):
-
-   | Variable | Value | Notes |
-   |---|---|---|
-   | `NEXT_PUBLIC_QF_CLIENT_ID` | *(paste after step 4)* | Blocking on hackathon API registration |
-   | `NEXT_PUBLIC_QF_AUTH_HOST` | `https://oauth2.quran.foundation` | Production only. Leave unset on Preview to hit the prelive sandbox. |
-   | `NEXT_PUBLIC_QF_API_HOST` | `https://apis.quran.foundation` | Same on prod and prelive. |
-
-5. Hit **Save and Deploy**. The first build will fail the OAuth flow because
-   the client_id is empty, but the site will still render — that is fine.
-
-### Option B · Create via wrangler from the CLI (faster if you already have wrangler)
+We use the **wrangler CLI** for everything. The Cloudflare dashboard was
+reorganised recently and the "Workers & Pages" section moved — the CLI is
+deterministic and doesn't depend on where a button lives this week.
 
 ```bash
-npm install -g wrangler
-wrangler login
-wrangler pages project create siraj-noor --production-branch=master
+# Wrangler is cached via npx on first use; no global install needed
+npx wrangler login
+npx wrangler pages project create siraj-noor --production-branch=master
 ```
 
-Then link env vars:
+`wrangler login` opens a browser OAuth flow — click Allow, then the CLI is
+authenticated for the rest of the session. The project creation command is
+idempotent — running it a second time fails cleanly with "project already
+exists", which is fine.
+
+### Environment variables — build-time vs runtime
+
+The app has **two separate environment layers** because token exchange runs
+on a Cloudflare Pages Function, not in the browser:
+
+**Build-time (baked into the JS bundle by `next build`)**
+
+Set in `.env.production` (committed, no secrets) and `.env.local` (gitignored,
+may contain the pre-live client_id for dev). These are what the browser sees:
+
+| Variable | Purpose | Committed value |
+|---|---|---|
+| `NEXT_PUBLIC_QF_CLIENT_ID` | Used to build the authorize URL query string | *(set locally per-dev, not committed)* |
+| `NEXT_PUBLIC_QF_AUTH_HOST` | OAuth host for authorize redirect | `https://oauth2.quran.foundation` (prod) / `https://prelive-oauth2.quran.foundation` (local dev) |
+| `NEXT_PUBLIC_QF_API_HOST` | User API host for `x-auth-token` requests | `https://apis.quran.foundation` |
+| `NEXT_PUBLIC_QF_USE_DIRECT_TOKEN` | *(optional)* set to `"true"` to bypass the proxy and talk to QF directly — only works if the client is registered with `token_endpoint_auth_method=none` | *(unset)* |
+
+**Runtime secrets (Cloudflare Pages Function env — never in the bundle)**
+
+Set via `wrangler pages secret put` on the deployed project. These are read
+by `functions/api/qf/token.ts` and `functions/api/qf/refresh.ts` when
+exchanging codes and refreshing tokens server-side:
+
+| Secret | Purpose |
+|---|---|
+| `QF_CLIENT_ID` | Used for the Basic auth header on the token endpoint |
+| `QF_CLIENT_SECRET` | The confidential client secret (never leaves the edge) |
+| `QF_TOKEN_ENDPOINT` | Full URL of the QF token endpoint (prelive or prod) |
+
+Commands to set the three secrets (pipe values from stdin so they don't land
+in shell history):
 
 ```bash
-wrangler pages secret put NEXT_PUBLIC_QF_CLIENT_ID --project-name=siraj-noor
-wrangler pages secret put NEXT_PUBLIC_QF_AUTH_HOST --project-name=siraj-noor
+printf "<client_id>"     | npx wrangler pages secret put QF_CLIENT_ID --project-name=siraj-noor
+printf "<client_secret>" | npx wrangler pages secret put QF_CLIENT_SECRET --project-name=siraj-noor
+printf "<token_url>"     | npx wrangler pages secret put QF_TOKEN_ENDPOINT --project-name=siraj-noor
 ```
 
-(`secret put` is fine for `NEXT_PUBLIC_` vars — Cloudflare treats them all as
-build-time substitutions.)
+**Important:** secrets set via `wrangler pages secret put` apply to **future
+deployments only**. After setting them you must run `npm run deploy` again
+so the next build picks up the env bindings. A probe against `/api/qf/token`
+will return `proxy_misconfigured` until this second deploy completes.
 
 ---
 
@@ -145,13 +164,21 @@ right long-term answer.
 
 ## 6. OAuth redirect URIs to register
 
-Register **both** of these in one shot to avoid a second approval cycle:
+QF's registration form accepts **one redirect URI per submission** (we
+learned this the hard way — the initial field table assumed two). Register
+the production URL first:
 
-- `http://localhost:3000/auth/callback/`
 - `https://siraj-noor.pages.dev/auth/callback/`
 
-Trailing slashes are mandatory for both — the callback route is a Next.js
-page that static-exports to `auth/callback/index.html`.
+The trailing slash is mandatory — the callback route is a Next.js page that
+static-exports to `auth/callback/index.html`.
+
+To add `http://localhost:3000/auth/callback/` for local dev, **reply to the
+QF approval email after it arrives** and ask support (Basit Minhas processed
+our submission, `developers@quran.com` is the canonical contact). Local dev
+isn't blocked in the meantime because you can iterate by redeploying to
+preview branches or by running `npx wrangler pages dev` locally (which reads
+`.dev.vars` for the function secrets).
 
 Post-logout redirect URI:
 
@@ -164,11 +191,52 @@ Post-logout redirect URI:
 Run this list after every production deploy. A dropped step here is the most
 common way a demo flow breaks silently.
 
-- [ ] `https://siraj-noor.pages.dev/` renders the landing page
-- [ ] `https://siraj-noor.pages.dev/privacy/` renders
-- [ ] `https://siraj-noor.pages.dev/terms/` renders
-- [ ] `https://siraj-noor.pages.dev/dashboard/` renders the Surah Ring
-- [ ] `https://siraj-noor.pages.dev/activity/` renders the Activity 3D heatmap
+**Pages routing (HTTP status checks, no JS required)**
+
+```bash
+for url in "https://siraj-noor.pages.dev/" \
+           "https://siraj-noor.pages.dev/privacy/" \
+           "https://siraj-noor.pages.dev/terms/" \
+           "https://siraj-noor.pages.dev/dashboard/" \
+           "https://siraj-noor.pages.dev/activity/" \
+           "https://siraj-noor.pages.dev/auth/callback/"; do
+  printf "%-55s " "$url"
+  curl -s -o /dev/null -w "%{http_code}\n" "$url"
+done
+```
+
+All six should return `200`.
+
+**Proxy function checks**
+
+```bash
+# Token proxy: expect 400 invalid_grant on fake code (proves Basic auth succeeds)
+curl -s -o /dev/null -w "token: %{http_code}\n" -X POST \
+  "https://siraj-noor.pages.dev/api/qf/token" \
+  -H "Content-Type: application/json" \
+  -d '{"code":"probe","code_verifier":"dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk","redirect_uri":"https://siraj-noor.pages.dev/auth/callback/"}'
+
+# Refresh proxy: same expectation
+curl -s -o /dev/null -w "refresh: %{http_code}\n" -X POST \
+  "https://siraj-noor.pages.dev/api/qf/refresh" \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token":"probe"}'
+
+# Non-POST blocked
+curl -s -o /dev/null -w "method-guard: %{http_code}\n" \
+  "https://siraj-noor.pages.dev/api/qf/token"
+```
+
+Expected:
+- `token: 400` — fake code rejected by QF as `invalid_grant` (client auth worked)
+- `refresh: 400` — same
+- `method-guard: 405` — our `onRequest` guard returns `method_not_allowed`
+
+If any proxy check returns `500 proxy_misconfigured`, the secrets aren't set
+on the active deployment. Run `npm run deploy` again.
+
+**Interactive flow (browser required)**
+
 - [ ] Sign in button opens the Quran Foundation OAuth consent screen
 - [ ] After consent, the user returns to `/dashboard/` signed in
 - [ ] Bookmark a verse → refresh page → bookmark persists (round-trips the User API)
@@ -180,14 +248,38 @@ common way a demo flow breaks silently.
 
 ---
 
-## 8. When everything is wired up
+## 8. QF issues two client IDs, not one
 
-The three external values you need to have in hand before Day 4 (Apr 16) are:
+QF's approval email ships **both a Pre-Production (sandbox) and a Production
+(live)** client at registration time. The two behave differently:
 
-1. `NEXT_PUBLIC_QF_CLIENT_ID` — from Quran Foundation API registration
-2. Cloudflare Pages project created and pointing at `billkhiz-bit/siraj-noor`
-3. Redirect URIs approved in the OAuth client config
+| Environment | Client ID | Endpoint | Scopes | Use case |
+|---|---|---|---|---|
+| **Pre-Production** | `3d0bebd0-110c-44bb-a097-746cf6a9615b` | `https://prelive-oauth2.quran.foundation` | All User API scopes enabled by default | All development and testing |
+| **Production** | `80ace9be-6835-4304-bb52-67b1bd891ff2` | `https://oauth2.quran.foundation` | Content API only by default — User API scopes require separate approval via the "Request Additional Scopes" form | Final submission deploy, once scopes are granted |
 
-If any of those three is missing, the live sign-in flow is blocked — that
-cascades into every personal feature (bookmarks, streak, activity, reflections).
-Front-load fixing them over any UI polish.
+Both clients are registered with `token_endpoint_auth_method=client_secret_basic`,
+so **both must be used through the Pages Function proxy**. The public PKCE
+flow (no secret) is rejected on the token endpoint for both.
+
+**Current state (as of Day 2):**
+
+- ✅ Pre-Production client active, all scopes, Pages Function proxy wired up
+- ⏳ Production user scopes pending QF approval (form submitted 2026-04-14)
+- ⏳ Token endpoint auth method change to `none` requested via email to Basit — not blocking because the proxy works regardless
+
+## 9. What to do before each phase of the hackathon
+
+**Day 2-5 (development):** Use the Pre-Production client. Proxy secrets on
+Cloudflare Pages are the pre-live values. `NEXT_PUBLIC_QF_AUTH_HOST` in
+`.env.local` targets `prelive-oauth2.quran.foundation`. Iterate freely.
+
+**Day 6 (demo video recording):** Keep Pre-Production. The demo doesn't care
+whether it runs against prelive or prod — judges see the same sign-in UX.
+
+**Day 7 (final submission):** If QF has approved Production scopes by this
+point, rotate the Pages Function secrets to the Production client_id and
+secret, update `NEXT_PUBLIC_QF_AUTH_HOST` to `https://oauth2.quran.foundation`
+in `.env.production`, and run `npm run deploy`. If Production scopes are
+still pending, submit with Pre-Production and note the status in the
+submission description.
