@@ -30,30 +30,41 @@ export default function AuthCallbackPage() {
     }
 
     async function run() {
-      const params = new URLSearchParams(window.location.search);
-      const error = params.get("error");
-      if (error) {
-        update({
-          status: "error",
-          message:
-            params.get("error_description") ??
-            `Sign-in was cancelled or failed (${error}).`,
-        });
-        return;
-      }
-
-      const code = params.get("code");
-      const stateParam = params.get("state");
-      if (!code || !stateParam) {
-        update({
-          status: "error",
-          message: "Missing authorisation code in callback URL.",
-        });
-        return;
-      }
-
+      console.log("[auth/callback] run() started");
       try {
+        const params = new URLSearchParams(window.location.search);
+        console.log("[auth/callback] params parsed", {
+          hasCode: params.has("code"),
+          hasState: params.has("state"),
+          hasError: params.has("error"),
+        });
+
+        const error = params.get("error");
+        if (error) {
+          console.log("[auth/callback] error param present:", error);
+          update({
+            status: "error",
+            message:
+              params.get("error_description") ??
+              `Sign-in was cancelled or failed (${error}).`,
+          });
+          return;
+        }
+
+        const code = params.get("code");
+        const stateParam = params.get("state");
+        if (!code || !stateParam) {
+          console.log("[auth/callback] missing code or state");
+          update({
+            status: "error",
+            message: "Missing authorisation code in callback URL.",
+          });
+          return;
+        }
+
+        console.log("[auth/callback] calling completeLogin");
         const { returnTo } = await completeLogin(code, stateParam);
+        console.log("[auth/callback] completeLogin resolved", { returnTo });
         if (cancelled) return;
         refresh();
         update({ status: "success", message: "Signed in — redirecting…" });
@@ -64,6 +75,7 @@ export default function AuthCallbackPage() {
         const target = isSafeReturnTo ? returnTo : "/";
         setTimeout(() => router.replace(target), 400);
       } catch (err) {
+        console.error("[auth/callback] run() caught:", err);
         update({
           status: "error",
           message: err instanceof Error ? err.message : String(err),
