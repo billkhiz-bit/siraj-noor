@@ -82,7 +82,7 @@ function CellMesh({ cell, onHover, hovered }: CellMeshProps) {
   const x = (col - COLS / 2) * (CELL_SIZE + CELL_GAP);
   const z = (row - ROWS / 2) * (CELL_SIZE + CELL_GAP);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (!ref.current) return;
     const targetY = hovered ? targetHeight + 0.4 : targetHeight;
     ref.current.scale.y = THREE.MathUtils.lerp(
@@ -93,7 +93,12 @@ function CellMesh({ cell, onHover, hovered }: CellMeshProps) {
     ref.current.position.y = ref.current.scale.y / 2;
 
     const mat = ref.current.material as THREE.MeshStandardMaterial;
-    const targetEmissive = cell.isToday ? 1.2 : intensity > 0 ? 0.55 : 0.05;
+    // Today cell pulses gently so it reads as "you are here" in the demo video
+    const todayPulse = cell.isToday
+      ? 1.2 + Math.sin(state.clock.elapsedTime * 2.4) * 0.35
+      : null;
+    const targetEmissive =
+      todayPulse ?? (intensity > 0 ? 0.55 : 0.05);
     mat.emissiveIntensity = THREE.MathUtils.lerp(
       mat.emissiveIntensity,
       hovered ? 1.4 : targetEmissive,
@@ -190,11 +195,13 @@ function Scene({
 
       <OrbitControls
         enablePan={false}
+        enableDamping
+        dampingFactor={0.08}
         minDistance={10}
         maxDistance={45}
         minPolarAngle={0.2}
-        maxPolarAngle={Math.PI / 2.2}
-        target={[0, 1, 0]}
+        maxPolarAngle={Math.PI / 2.15}
+        target={[0, 1.5, 0]}
         autoRotate
         autoRotateSpeed={0.25}
         keyEvents={false}
@@ -254,7 +261,7 @@ export function Activity3D({ sessions }: Activity3DProps) {
       </p>
       <Canvas
         shadows
-        camera={{ position: [0, 18, 20], fov: 50 }}
+        camera={{ position: [14, 15, 22], fov: 42 }}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ gl }) => {
           gl.setClearColor("#050510");

@@ -55,6 +55,7 @@ function SurahBar({
   animate,
 }: SurahBarProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const readRingRef = useRef<THREE.Mesh>(null);
   const baseColour = surah.type === "meccan" ? MECCAN_COLOUR : MEDINAN_COLOUR;
   const targetHeight = (surah.ayatCount / MAX_AYAT) * HEIGHT_SCALE;
   const heightRef = useRef(0);
@@ -121,6 +122,16 @@ function SurahBar({
       const t = state.clock.elapsedTime;
       meshRef.current.position.y = h / 2 + Math.sin(t * 2) * 0.1;
     }
+
+    // Pulse the read-marker ring on a staggered phase so the ring does not
+    // flash uniformly across all 114 read surahs at once.
+    if (readRingRef.current && isRead) {
+      const t = state.clock.elapsedTime;
+      const phase = index * 0.18;
+      const pulse = 0.55 + Math.sin(t * 1.6 + phase) * 0.25;
+      const ringMat = readRingRef.current.material as THREE.MeshBasicMaterial;
+      ringMat.opacity = pulse;
+    }
   });
 
   return (
@@ -155,20 +166,22 @@ function SurahBar({
         />
       </mesh>
 
-      {/* Read marker: a small amber ring at the base */}
+      {/* Read marker: a glowing amber ring at the base that pulses gently */}
       {isRead && (
         <mesh
+          ref={readRingRef}
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, 0.02, 0]}
         >
           <ringGeometry
-            args={[BAR_RADIUS * 1.4, BAR_RADIUS * 2.2, 24]}
+            args={[BAR_RADIUS * 1.6, BAR_RADIUS * 2.6, 32]}
           />
           <meshBasicMaterial
             color={READ_COLOUR}
             transparent
             opacity={0.55}
             side={THREE.DoubleSide}
+            toneMapped={false}
           />
         </mesh>
       )}
