@@ -433,6 +433,142 @@ export default function DebugAuthPage() {
       };
       setProbes([...results]);
     }
+
+    // Probe 10: Basit's exact repro URL with mushafId+first query params (2026-04-15 reply — he says this works on his side with aud:[])
+    const PROBE_10_NAME =
+      "10. apis-prelive bookmarks with ?mushafId=4&first=1 (Basit's repro URL)";
+    push({ name: PROBE_10_NAME, status: "pending" });
+    try {
+      const r = await fetch(
+        "https://apis-prelive.quran.foundation/auth/v1/bookmarks?mushafId=4&first=1",
+        {
+          headers: {
+            "x-auth-token": tokens.accessToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        }
+      );
+      const body = await r.text();
+      let parsed: unknown = body;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        /* leave as string */
+      }
+      results[results.length - 1] = {
+        name: PROBE_10_NAME,
+        status: r.ok ? "success" : "error",
+        detail: `HTTP ${r.status}`,
+        data: parsed,
+      };
+      setProbes([...results]);
+    } catch (err) {
+      results[results.length - 1] = {
+        name: PROBE_10_NAME,
+        status: "error",
+        detail: err instanceof Error ? err.message : String(err),
+      };
+      setProbes([...results]);
+    }
+
+    // Probe 11: same request as probe 10 but via a Cloudflare Pages Function that forwards server-side — tests the browser Origin-header rejection hypothesis
+    const PROBE_11_NAME =
+      "11. Probe 10 via Pages Function proxy (server-side, no browser Origin)";
+    push({ name: PROBE_11_NAME, status: "pending" });
+    try {
+      const r = await fetch("/api/qf/test-proxy", {
+        headers: {
+          "x-auth-token": tokens.accessToken,
+          "x-client-id": QF_CLIENT_ID,
+        },
+      });
+      const body = await r.text();
+      let parsed: unknown = body;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        /* leave as string */
+      }
+      results[results.length - 1] = {
+        name: PROBE_11_NAME,
+        status: r.ok ? "success" : "error",
+        detail: `HTTP ${r.status} (via proxy)`,
+        data: parsed,
+      };
+      setProbes([...results]);
+    } catch (err) {
+      results[results.length - 1] = {
+        name: PROBE_11_NAME,
+        status: "error",
+        detail: err instanceof Error ? err.message : String(err),
+      };
+      setProbes([...results]);
+    }
+
+    // Probe 12: server-side /oauth2/userinfo via Pages Function — browser probes 1+2 fail CORS, but this one bypasses the browser Origin entirely. Tests BOTH Bearer and x-auth-token formats in parallel via test-userinfo.ts
+    const PROBE_12_NAME =
+      "12. Server-side /oauth2/userinfo via Pages Function (tests both Bearer and x-auth-token)";
+    push({ name: PROBE_12_NAME, status: "pending" });
+    try {
+      const r = await fetch("/api/qf/test-userinfo", {
+        headers: {
+          "x-auth-token": tokens.accessToken,
+          "x-client-id": QF_CLIENT_ID,
+        },
+      });
+      const body = await r.text();
+      let parsed: unknown = body;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        /* leave as string */
+      }
+      results[results.length - 1] = {
+        name: PROBE_12_NAME,
+        status: r.ok ? "success" : "error",
+        detail: `HTTP ${r.status} (via proxy)`,
+        data: parsed,
+      };
+      setProbes([...results]);
+    } catch (err) {
+      results[results.length - 1] = {
+        name: PROBE_12_NAME,
+        status: "error",
+        detail: err instanceof Error ? err.message : String(err),
+      };
+      setProbes([...results]);
+    }
+
+    // Probe 13: Hydra token introspection — definitive statement from Hydra about whether it considers this token active
+    const PROBE_13_NAME =
+      "13. Hydra /oauth2/introspect via Pages Function (ground truth on token state)";
+    push({ name: PROBE_13_NAME, status: "pending" });
+    try {
+      const r = await fetch("/api/qf/test-introspect", {
+        headers: { "x-auth-token": tokens.accessToken },
+      });
+      const body = await r.text();
+      let parsed: unknown = body;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        /* leave as string */
+      }
+      results[results.length - 1] = {
+        name: PROBE_13_NAME,
+        status: r.ok ? "success" : "error",
+        detail: `HTTP ${r.status} (via proxy)`,
+        data: parsed,
+      };
+      setProbes([...results]);
+    } catch (err) {
+      results[results.length - 1] = {
+        name: PROBE_13_NAME,
+        status: "error",
+        detail: err instanceof Error ? err.message : String(err),
+      };
+      setProbes([...results]);
+    }
   }
 
   return (

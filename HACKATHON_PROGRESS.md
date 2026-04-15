@@ -188,11 +188,94 @@ Sent full diagnostic email to Basit with JWT payload, sanitised headers, and `au
   - `global-error.tsx:169` — converted `<a href="/">Return home</a>` to a `<button onClick={() => { window.location.href = "/"; }}>` for both lint compliance AND genuine hard-navigation semantics (the right move for a last-resort error boundary where the router state may be compromised)
 - Gotcha captured in `~/.claude/skills/preflight/checks/frontend.md`: `react-hooks/set-state-in-effect` only fires on early-return setState branches, not on continued-execution branches. Don't shotgun disables — fix only the flagged lines.
 
+### Day 4 evening: Basit's reply disproves our `allowed_audiences` theory — deeper audit required
+
+Basit replied saying his team reproduced our prelive client and confirmed Hydra IS issuing access tokens with `aud: []` for this client — BUT on his side, with that same empty-audience token, `apis-prelive.quran.foundation` accepts the request and reaches backend validation. So an empty audience by itself does not explain the 403. He asked for a minimal repro: the exact authorize URL, exact `/oauth2/token` request, exact code that selects and sends the x-auth-token header, and the result of calling `https://apis-prelive.quran.foundation/auth/v1/bookmarks?mushafId=4&first=1` with the same token.
+
+This collapsed our previous working theory (Hydra client `allowed_audiences` is empty, Basit needs to populate it). If Basit's aud:[] reproduction works while ours fails, the difference has to be something else on our side or something client-specific in Hydra's config for `3d0bebd0-...`.
+
+### Probe 10: Basit's exact URL with query params (still 403)
+- Added `/debug/auth` probe 10 hitting `https://apis-prelive.quran.foundation/auth/v1/bookmarks?mushafId=4&first=1` with the same token and `x-client-id`.
+- Result: **byte-identical HTTP 403 `invalid_token`** as probe 3. Query params are not the discriminator.
+
+### Probe 11: Origin header hypothesis tested and disproved (server-side fetch)
+- Hypothesis: maybe QF's API gateway rejects requests with browser `Origin: https://siraj-noor.pages.dev` header. Basit tested server-side (curl, no Origin), we test browser-side.
+- Created `functions/api/qf/test-proxy.ts` — a Cloudflare Pages Function that forwards Basit's exact URL to QF server-side on Cloudflare Workers (no browser Origin, different egress IP than curl).
+- Added probe 11 calling the proxy. Result: **byte-identical HTTP 403 `invalid_token`**. Origin header is not the discriminator either.
+
+### Full audit of our side (static, config, dynamic, docs)
+Before escalating back to Basit with weaker evidence, ran a systematic audit to be sure we had exhausted everything on our side.
+
+**Static code audit (files read and reviewed):**
+- `src/lib/auth/pkce.ts` — RFC 7636 compliant: 32-byte random verifier, SHA-256 base64url challenge. No issues.
+- `src/app/auth/callback/page.tsx` — standard OAuth2 callback, state/nonce validation, open-redirect prevention. **No user-provisioning step** (QF docs confirm none exists or is needed).
+- `functions/api/qf/refresh.ts` — mirrors `token.ts` with `client_secret_basic`, works reliably.
+- `src/lib/auth/storage.ts` — snapshot cache for React compatibility (the React #185 fix), no token corruption.
+- `src/lib/qf-user-api.ts` — `authHeaders()` pattern matches the QF quickstart byte-for-byte. **One latent bug noted for follow-up**: `listBookmarks` calls `qfFetch("/bookmarks")` with zero query params, but the QF docs mark `mushafId` as required for the GET endpoint. Not what's causing the current 403 (probe 10 with `mushafId=4` still fails), but needs fixing once auth is unblocked.
+
+**Configuration audit:**
+- `.env.local` has prelive values, `.env.production` has prod values. Next.js resolves `.env.local` overriding `.env.production` at build time (build runs locally before `wrangler pages deploy`), so the deployed bundle uses `.env.local`.
+- **Verified by grepping the deployed JS chunks** on `siraj-noor.pages.dev`: chunk `0zao82ol9esjj.js` has `apis.quran.foundation` and `prelive-oauth2.quran.foundation` baked in. No env-var surprises. Cloudflare Pages secrets (`QF_CLIENT_ID`, `QF_CLIENT_SECRET`) are set correctly, proven by the fact that token exchange and refresh both work reliably.
+
+**Documentation audit via `api-docs.quran.foundation`:**
+- Quickstart example (`/docs/tutorials/oidc/user-apis-quickstart`) uses exactly our header pattern (`x-auth-token` + `x-client-id`), no query params shown, no user-provisioning step.
+- Bookmarks GET reference (`/docs/user_related_apis_versioned/auth-get-v-1-bookmarks`) confirms `mushafId` is marked `required`.
+- No user-provisioning or onboarding endpoint documented anywhere.
+- Fetched `/.well-known/openid-configuration` directly (the stored memory incorrectly said it wasn't documented — corrected in `quran_foundation_api.md`). Advertises `"none"` in `token_endpoint_auth_methods_supported` (public PKCE clients supported by platform).
+
+**Dynamic audit via two new Pages Functions:**
+- `functions/api/qf/test-userinfo.ts` — server-side probe of `/oauth2/userinfo`, tests BOTH `Authorization: Bearer <token>` AND `x-auth-token + x-client-id` header formats in parallel and returns both results.
+- `functions/api/qf/test-introspect.ts` — server-side probe of `/oauth2/introspect` with our client credentials from the proxy env (client_secret_basic auth).
+- Added probes 12 and 13 on `/debug/auth` calling these two functions.
+
+### Probe 12: Hydra's own `/userinfo` rejects the token — THE KILLER FINDING
+Result from a fresh run:
+
+    bearer:
+      status: 401
+      body: {"error":"request_unauthorized",
+             "error_description":"The request could not be authorized.
+                                  Check that you provided valid credentials
+                                  in the right format."}
+    x_auth_token_with_client_id:
+      status: 401
+      body: (same as above, byte-identical)
+
+**Hydra's own authentication server is refusing to validate an access_token that Hydra itself just issued, at the standard OIDC `/userinfo` endpoint, in BOTH standard-OIDC and QF-custom header formats.** Signature verifies against published JWKS (kid `293bb68d-...` matches), iss matches, exp is fresh (3000+ seconds remaining at probe time), scp includes `openid`, sub is correct. The only anomaly is `aud: []` — but Basit already said aud:[] works on his side with his test client.
+
+This means the problem is deeper than `allowed_audiences`. Something on the admin-side config for client `3d0bebd0-...` makes Hydra's issuance path and Hydra's validation path fundamentally inconsistent. No client-side code change can resolve this — Hydra refuses to validate its own tokens.
+
+### Probe 13: `/oauth2/introspect` blocked by nginx at QF edge
+Result: plain HTML `<html><head><title>403 Forbidden</title></head><body>...nginx...</body></html>` rather than Hydra's JSON error format. Token endpoint and refresh endpoint on the same hostname both work fine from the same Cloudflare Worker with the same credentials. Only `/oauth2/introspect` is blocked. Classic nginx `location` rule disabling the endpoint — standard OAuth deployment practice to prevent clients from probing token state via introspection. Cannot get Hydra's ground-truth opinion on the token via this route.
+
+### Third email to Basit — ~450 words, post-audit evidence bundle
+
+Sent 2026-04-15 late evening. Contains:
+1. **Minimal repro** Basit explicitly asked for: authorize URL with all params, the two-hop `/oauth2/token` exchange via our Pages Function proxy, the full `authHeaders()` function from `qf-user-api.ts` (both token selection AND header sending), and the exact URL pattern our user API calls use.
+2. **Result of Basit's suggested URL**: tested two ways (browser + server-side proxy), both return byte-identical 403 invalid_token. Rules out browser Origin, query params, User-Agent, client-side code path.
+3. **The killer finding**: Hydra's own `/userinfo` rejects the token in both header formats with identical 401 `request_unauthorized`. Plus a note that `/oauth2/introspect` is nginx-blocked at QF's edge so we couldn't get direct Hydra ground truth.
+4. **Interpretation**: issuance succeeds, validation fails at every downstream Hydra endpoint (`/userinfo`, `/auth/v1/*`, `/content/api/v4/*`). This is a Hydra client configuration issue, not a user-record issue.
+5. **Ask**: pull up the full Hydra admin config for client `3d0bebd0-...` (and prod `80ace9be-...`) and compare against whatever test client Basit used to reproduce. Specifically: `allowed_audiences`, `grant_types`, `response_types`, `token_endpoint_auth_method`, client-level scope list, custom metadata/flags.
+
+Em dashes stripped from the final version per writing-style preference. Draft archived at `C:\Users\bilal\siraj-noor-email-basit-diagnostic.txt`.
+
 ### Day 4 still TODO
-- Wait on Basit's reply (expected 24-48h, escalate by end of April 17)
-- When audience fix lands, **fully sign out via `/oauth2/sessions/logout` before retesting** — Hydra caches client config at authentication time, not refresh time. A simple token refresh will NOT pick up new `allowed_audiences`.
-- Draft Provision Launch submission form content (target: April 18)
-- Record demo video (Day 6 plan; mock preview data supports full end-to-end recording even if auth still pending)
+- Wait on Basit's reply to the third email (expected 24-48h, escalate by end of April 17 — submission is April 20).
+- When the Hydra config fix lands, **fully sign out via `/oauth2/sessions/logout` before retesting**. Hydra caches client config at authentication time, not refresh time. A simple token refresh will NOT pick up new config.
+- **Follow-up fix needed in `src/lib/qf-user-api.ts`**: add `mushafId` query param to `listBookmarks` (QF docs mark it `required` for the GET endpoint; our code omits it). Not the cause of the current 403, but needs fixing once auth is unblocked so production API calls don't silently fail on the first real user.
+- Draft Provision Launch submission form content (target: April 18).
+- Record demo video (Day 6 plan; mock preview data supports full end-to-end recording even if auth still pending).
+
+### Diagnostic infrastructure summary (hidden, for investigation only)
+
+The `/debug/auth` page now has **13 probes** plus three Pages Function helpers. All are hidden from the sidebar and will be removed once the investigation is resolved:
+
+- Probes 1-5: original diagnostic battery (userinfo browser, /auth/v1/bookmarks with various headers, refresh + retry)
+- Probes 6-9: hostname test, id_token decode, different user API endpoint, content API
+- Probe 10: Basit's exact URL with mushafId query param from browser
+- Probe 11: Basit's exact URL via `functions/api/qf/test-proxy.ts` (server-side, no browser Origin)
+- Probe 12: Hydra `/userinfo` via `functions/api/qf/test-userinfo.ts` (both Bearer and x-auth-token formats in parallel)
+- Probe 13: Hydra `/oauth2/introspect` via `functions/api/qf/test-introspect.ts` (with client_secret_basic from Worker env)
 
 ---
 
@@ -225,15 +308,21 @@ x-client-id: <client_id>
 
 ## Currently blocked on
 
-### 1. Basit's response on the Hydra `allowed_audiences` fix (highest priority)
+### 1. Basit's response on the Hydra client config diff (highest priority)
 
-Comprehensive evidence bundle re-sent 2026-04-15 evening via reply to the existing `developers@quran.com` thread. Contains: id_token vs access_token audience comparison (definitive proof Hydra is deliberately not setting aud on access tokens for this client), three-path universal rejection across `/auth/v1/bookmarks`, `/auth/v1/streaks`, and `/content/api/v4/chapters/1`, DNS evidence disproving Basit's hostname theory, and five ruled-out hypotheses.
+Third evidence bundle sent 2026-04-15 late evening via reply to the `developers@quran.com` thread. The narrative has evolved across the thread:
 
-Two fix paths offered in the email:
-- **Primary:** Basit populates `allowed_audiences` on both Hydra clients (`3d0bebd0-110c-44bb-a097-746cf6a9615b` and `80ace9be-6835-4304-bb52-67b1bd891ff2`) with whatever audience value the `apis.quran.foundation` gateway expects. If Hydra auto-emits the whitelisted audience by default, no client change needed.
-- **Fallback:** Basit tells us the expected audience string and we pass it via `?audience=<value>` on `/oauth2/auth`. Requires a one-line change in `src/lib/auth/qf-oauth.ts:56-65` (add `audience` to the `URLSearchParams`) plus a redeploy. ~15-20 minutes turnaround.
+1. First diagnosis (2026-04-14 evening): `aud: []` on access_token, ask to populate `allowed_audiences`.
+2. Basit replied suggesting hostname mismatch (`apis-prelive` vs `apis`).
+3. Second reply (2026-04-15 afternoon): disproved hostname theory with DNS evidence + probes 6/7/8/9, proved id_token has correct aud while access_token doesn't.
+4. Basit replied saying his team reproduced our client and confirmed Hydra issues aud:[] tokens, BUT on his side those tokens successfully reach backend validation on apis-prelive. So aud:[] alone isn't the cause. He asked for a minimal repro of the auth flow + API call.
+5. Third reply (2026-04-15 evening): minimal repro as requested PLUS the killer finding that Hydra's own `/userinfo` rejects the token in both Bearer and x-auth-token header formats with identical 401 `request_unauthorized`. This proves the issue is on Hydra's side (token issuance succeeds but validation fails at every downstream Hydra endpoint including Hydra's own OIDC layer), but it's NOT simply `allowed_audiences`.
 
-**Caveat for when the fix lands:** Hydra caches client config at authentication time, not refresh time. A simple token refresh will NOT pick up the new `allowed_audiences`. Must fully sign out via `/oauth2/sessions/logout` and sign back in for Hydra to re-read the client config. Flagged here so future retesting doesn't false-negative on a stale refresh.
+The third email's ask: pull up the full Hydra admin config for client `3d0bebd0-110c-44bb-a097-746cf6a9615b` (and prod `80ace9be-6835-4304-bb52-67b1bd891ff2`) and compare against whatever test client Basit used to reproduce. Specifically: `allowed_audiences`, `grant_types`, `response_types`, `token_endpoint_auth_method`, client-level scope list, custom metadata/flags.
+
+**Caveat for when the fix lands:** Hydra caches client config at authentication time, not refresh time. A simple token refresh will NOT pick up the new config. Must fully sign out via `/oauth2/sessions/logout` and sign back in for Hydra to re-read the client.
+
+**What we have exhausted on our side:** every client-side hypothesis has been definitively disproved via the 13 probes on `/debug/auth`. Static code audit clean, configuration audit clean, documentation audit confirms we match the quickstart verbatim, server-side tests rule out browser-only behaviour. There is nothing left to test that does not require QF-side admin access.
 
 Not blocking demo video recording thanks to the mock preview data fallback.
 
