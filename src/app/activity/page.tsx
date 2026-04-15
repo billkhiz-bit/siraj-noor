@@ -15,8 +15,7 @@ type DisplayMode = "loading" | "preview-signed-out" | "preview-api-down" | "live
 
 export default function ActivityPage() {
   const { isAuthenticated, isReady, login } = useAuth();
-  const { sessions, streak, readSurahs, isLoading, error } =
-    useReadingProgress();
+  const { sessions, streak, readSurahs, error } = useReadingProgress();
 
   const mode: DisplayMode = !isReady
     ? "loading"

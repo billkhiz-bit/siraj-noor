@@ -150,22 +150,49 @@ Rather than modifying the frozen Ramadan Hacks artefact, this is a parallel fork
 - Camera tightened from `[0, 16, 24] fov 48` to `[0, 14, 22] fov 42` for a more cinematic, compressed-depth framing
 - Preview-mode amber overlay was tried and reverted per Bilal's feedback — clean ring without fake "read" indicators looks better when no real data is present
 
-### Mock preview data for personal pages
-- `src/lib/data/mock-personal-data.ts` — 6 sample bookmarks (Ayat al-Kursi, 94:5, 13:28, 41:34, 2:286, 55:13), 3 sample collections, 28 reading sessions distributed across the last 90 days, mock streak
-- `/bookmarks`, `/collections`, `/activity` pages all show mock data when user is not signed in OR when User API returns an error
-- Two banner variants: "Preview — sign in to see your own" and "Showing sample data while we reconnect"
-- Preview rows hide destructive actions (Remove, Delete) so they don't look clickable when pointing at fake data
-- Today Panel on `/dashboard` quietly falls back to mock streak and read-surahs counts when the User API is down, so a signed-in user never sees a broken `0 day streak`
-
-### Error UI cleanup
-- Context providers (bookmarks, collections, reading-progress) now log raw upstream error detail to `console.error` but display short user-friendly strings — no more raw 403 JSON bodies leaking into the UI
-
-### Day 3 still TODO
+### Day 3 still TODO (rolled forward to Day 4)
 - Wait on Basit's response to the audience allow-list request
 - Record demo video (Day 6, using mock preview data if auth still pending)
 - Final Surah Ring visual polish iteration once real reading-session data is flowing
 - Switch to production QF client once scopes are approved (Day 5–6)
 - Draft Provision Launch submission form content (Day 5–6)
+
+---
+
+## Day 4 — 2026-04-15 (audience investigation finale)
+
+### First diagnostic bundle sent, Basit replies with hostname theory
+Sent full diagnostic email to Basit with JWT payload, sanitised headers, and `aud: []` root-cause narrative. Basit replied suggesting the 403 was a hostname mismatch — `apis.quran.foundation` is production per his docs, and prelive should target `apis-prelive.quran.foundation`. Plausible hypothesis, needed verification.
+
+### Hostname theory disproved (probe 6 + curl DNS)
+- Added `/debug/auth` probe 6 hitting `https://apis-prelive.quran.foundation/auth/v1/bookmarks` with the same prelive token and `x-client-id` → **byte-identical HTTP 403 `invalid_token`** as probe 3.
+- `curl -v` on both hostnames resolves to the same three Cloudflare IPs (`172.67.74.212, 104.26.7.170, 104.26.6.170`), returns byte-identical unauth 400s (Content-Length: 108 on both), same `Server: cloudflare` and `CF-RAY` prefix, same `Access-Control-Allow-Origin`.
+- `apis-prelive.*` and `apis.*` are one Cloudflare-fronted origin with two CNAMEs. QF's docs describe a logical split that isn't reflected in the infrastructure. Hostname is not the discriminator.
+
+### Probes 7, 8, 9 → definitive root cause identified
+- **Probe 7 (killer finding):** decoded the id_token from the same token exchange as the failing access_token. **id_token has `aud: ["3d0bebd0-..."]` set correctly per OIDC standard, while access_token has `aud: []`**. Hydra is capable of setting aud on this client — it just did, on the id_token. The empty access_token aud is therefore a deliberate server-side config choice (empty `allowed_audiences`), not a Hydra bug.
+- **Probe 8:** `/auth/v1/streaks` with same token → identical 403 invalid_token. Not endpoint-specific.
+- **Probe 9:** `/content/api/v4/chapters/1` with same token → ALSO identical 403 invalid_token. The whole apis.quran.foundation gateway rejects at a single auth-check layer before endpoint routing. Gateway-wide, not per-resource. No per-path fix possible.
+- Cross-verified tokens are genuine Hydra: both signing keys (`293bb68d-...` for access, `e8f07c58-...` for id) are published in `https://prelive-oauth2.quran.foundation/.well-known/jwks.json`. Hydra uses separate keys for access and id tokens, which is normal.
+- Bonus: `.well-known/openid-configuration` DOES exist at the prelive issuer — earlier memory note was wrong, corrected in `quran_foundation_api.md`. Discovery lists `"none"` in `token_endpoint_auth_methods_supported` (PKCE public clients are platform-supported).
+
+### Second email to Basit — comprehensive evidence reply
+- ~350 words after trimming. TL;DR up front, hostname theory rebutted with DNS proof, id_token vs access_token comparison as definitive proof, three-path universal rejection, five ruled-out hypotheses.
+- Ask: populate `allowed_audiences` on both Hydra clients (`3d0bebd0-...` and `80ace9be-...`) with the correct audience string. Fallback: tell us the string and we pass it via `?audience=` on /oauth2/auth within the hour.
+- Draft archived at `C:\Users\bilal\siraj-noor-email-basit-diagnostic.txt`. Sent 2026-04-15 evening. Awaiting reply.
+
+### Preflight lint cleanup (same day, separate concern)
+- Ran `/preflight`, found 2 errors + 1 warning. Fixed all three:
+  - `activity/page.tsx:18` — removed unused `isLoading` destructure
+  - `debug/auth/page.tsx:81` — added `eslint-disable-next-line react-hooks/set-state-in-effect` on the early-return setState branch with a one-line comment explaining the SSG/localStorage constraint (useState lazy init crashes the static export build because localStorage is undefined at build time)
+  - `global-error.tsx:169` — converted `<a href="/">Return home</a>` to a `<button onClick={() => { window.location.href = "/"; }}>` for both lint compliance AND genuine hard-navigation semantics (the right move for a last-resort error boundary where the router state may be compromised)
+- Gotcha captured in `~/.claude/skills/preflight/checks/frontend.md`: `react-hooks/set-state-in-effect` only fires on early-return setState branches, not on continued-execution branches. Don't shotgun disables — fix only the flagged lines.
+
+### Day 4 still TODO
+- Wait on Basit's reply (expected 24-48h, escalate by end of April 17)
+- When audience fix lands, **fully sign out via `/oauth2/sessions/logout` before retesting** — Hydra caches client config at authentication time, not refresh time. A simple token refresh will NOT pick up new `allowed_audiences`.
+- Draft Provision Launch submission form content (target: April 18)
+- Record demo video (Day 6 plan; mock preview data supports full end-to-end recording even if auth still pending)
 
 ---
 
@@ -200,7 +227,13 @@ x-client-id: <client_id>
 
 ### 1. Basit's response on the Hydra `allowed_audiences` fix (highest priority)
 
-Email sent 2026-04-14 evening via the existing thread on `developers@quran.com`. Ask: add `apis.quran.foundation` (or whatever the correct audience identifier is) to `allowed_audiences` on both clients so issued tokens carry a valid `aud` claim. One config change on his end unblocks the entire User API integration.
+Comprehensive evidence bundle re-sent 2026-04-15 evening via reply to the existing `developers@quran.com` thread. Contains: id_token vs access_token audience comparison (definitive proof Hydra is deliberately not setting aud on access tokens for this client), three-path universal rejection across `/auth/v1/bookmarks`, `/auth/v1/streaks`, and `/content/api/v4/chapters/1`, DNS evidence disproving Basit's hostname theory, and five ruled-out hypotheses.
+
+Two fix paths offered in the email:
+- **Primary:** Basit populates `allowed_audiences` on both Hydra clients (`3d0bebd0-110c-44bb-a097-746cf6a9615b` and `80ace9be-6835-4304-bb52-67b1bd891ff2`) with whatever audience value the `apis.quran.foundation` gateway expects. If Hydra auto-emits the whitelisted audience by default, no client change needed.
+- **Fallback:** Basit tells us the expected audience string and we pass it via `?audience=<value>` on `/oauth2/auth`. Requires a one-line change in `src/lib/auth/qf-oauth.ts:56-65` (add `audience` to the `URLSearchParams`) plus a redeploy. ~15-20 minutes turnaround.
+
+**Caveat for when the fix lands:** Hydra caches client config at authentication time, not refresh time. A simple token refresh will NOT pick up the new `allowed_audiences`. Must fully sign out via `/oauth2/sessions/logout` and sign back in for Hydra to re-read the client config. Flagged here so future retesting doesn't false-negative on a stale refresh.
 
 Not blocking demo video recording thanks to the mock preview data fallback.
 

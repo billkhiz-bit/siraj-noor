@@ -75,9 +75,11 @@ export default function DebugAuthPage() {
     decoded?: { header?: unknown; payload?: unknown; error?: string };
   }>({ hasTokens: false });
 
+  // One-shot post-hydration sync from localStorage: a useState lazy init would run during SSG where localStorage is undefined and crash the build.
   useEffect(() => {
     const tokens = loadTokens();
     if (!tokens) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTokenInfo({ hasTokens: false });
       return;
     }
@@ -287,6 +289,145 @@ export default function DebugAuthPage() {
     } catch (err) {
       results[results.length - 1] = {
         name: "5. Refresh token + retry /bookmarks",
+        status: "error",
+        detail: err instanceof Error ? err.message : String(err),
+      };
+      setProbes([...results]);
+    }
+
+    // Probe 6: hit apis-prelive.quran.foundation directly (Basit pointed out 2026-04-15 that prelive uses a different API host than prod)
+    const PROBE_6_NAME =
+      "6. apis-prelive /auth/v1/bookmarks with x-auth-token + x-client-id";
+    push({ name: PROBE_6_NAME, status: "pending" });
+    try {
+      const r = await fetch(
+        "https://apis-prelive.quran.foundation/auth/v1/bookmarks",
+        {
+          headers: {
+            "x-auth-token": tokens.accessToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        }
+      );
+      const body = await r.text();
+      let parsed: unknown = body;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        /* leave as string */
+      }
+      results[results.length - 1] = {
+        name: PROBE_6_NAME,
+        status: r.ok ? "success" : "error",
+        detail: `HTTP ${r.status}`,
+        data: parsed,
+      };
+      setProbes([...results]);
+    } catch (err) {
+      results[results.length - 1] = {
+        name: PROBE_6_NAME,
+        status: "error",
+        detail: err instanceof Error ? err.message : String(err),
+      };
+      setProbes([...results]);
+    }
+
+    // Probe 7: decode id_token — if its aud has client_id while access_token has aud:[], Hydra is deliberately not setting access_token aud
+    const PROBE_7_NAME = "7. Decode id_token and inspect aud/sub/iss claims";
+    push({ name: PROBE_7_NAME, status: "pending" });
+    try {
+      if (!tokens.idToken) {
+        results[results.length - 1] = {
+          name: PROBE_7_NAME,
+          status: "error",
+          detail: "No id_token present in localStorage",
+        };
+      } else {
+        const idDecoded = decodeJwt(tokens.idToken);
+        results[results.length - 1] = {
+          name: PROBE_7_NAME,
+          status: "success",
+          detail: "decoded locally (no network)",
+          data: {
+            id_token_header: idDecoded.header,
+            id_token_payload: idDecoded.payload,
+          },
+        };
+      }
+      setProbes([...results]);
+    } catch (err) {
+      results[results.length - 1] = {
+        name: PROBE_7_NAME,
+        status: "error",
+        detail: err instanceof Error ? err.message : String(err),
+      };
+      setProbes([...results]);
+    }
+
+    // Probe 8: different user API endpoint — tests whether rejection is endpoint-specific or universal
+    const PROBE_8_NAME = "8. /auth/v1/streaks with x-auth-token + x-client-id";
+    push({ name: PROBE_8_NAME, status: "pending" });
+    try {
+      const r = await fetch(`${QF_API_BASE}/streaks`, {
+        headers: {
+          "x-auth-token": tokens.accessToken,
+          "x-client-id": QF_CLIENT_ID,
+        },
+      });
+      const body = await r.text();
+      let parsed: unknown = body;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        /* leave as string */
+      }
+      results[results.length - 1] = {
+        name: PROBE_8_NAME,
+        status: r.ok ? "success" : "error",
+        detail: `HTTP ${r.status}`,
+        data: parsed,
+      };
+      setProbes([...results]);
+    } catch (err) {
+      results[results.length - 1] = {
+        name: PROBE_8_NAME,
+        status: "error",
+        detail: err instanceof Error ? err.message : String(err),
+      };
+      setProbes([...results]);
+    }
+
+    // Probe 9: content API with same token — if it returns a different error than /auth/v1/*, rejection is per-path not per-token
+    const PROBE_9_NAME =
+      "9. /content/api/v4/chapters/1 with x-auth-token + x-client-id";
+    push({ name: PROBE_9_NAME, status: "pending" });
+    try {
+      const r = await fetch(
+        "https://apis.quran.foundation/content/api/v4/chapters/1",
+        {
+          headers: {
+            "x-auth-token": tokens.accessToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        }
+      );
+      const body = await r.text();
+      let parsed: unknown = body;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        /* leave as string */
+      }
+      results[results.length - 1] = {
+        name: PROBE_9_NAME,
+        status: r.ok ? "success" : "error",
+        detail: `HTTP ${r.status}`,
+        data: parsed,
+      };
+      setProbes([...results]);
+    } catch (err) {
+      results[results.length - 1] = {
+        name: PROBE_9_NAME,
         status: "error",
         detail: err instanceof Error ? err.message : String(err),
       };

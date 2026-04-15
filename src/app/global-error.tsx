@@ -166,21 +166,24 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
             >
               Retry
             </button>
-            <a
-              href="/"
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/";
+              }}
               style={{
                 border: "1px solid rgba(148, 163, 184, 0.3)",
+                backgroundColor: "transparent",
                 color: "#f1f5f9",
                 padding: "0.5rem 1rem",
                 fontSize: "0.875rem",
                 fontWeight: 500,
                 borderRadius: "0.375rem",
-                textDecoration: "none",
-                display: "inline-block",
+                cursor: "pointer",
               }}
             >
               Return home
-            </a>
+            </button>
           </div>
         </div>
       </body>
