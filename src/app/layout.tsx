@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth/auth-context";
 import { BookmarksProvider } from "@/lib/auth/bookmarks-context";
 import { CollectionsProvider } from "@/lib/auth/collections-context";
 import { ReadingProgressProvider } from "@/lib/auth/reading-progress-context";
+import { StreakCelebration } from "@/components/dashboard/streak-celebration";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,7 +44,10 @@ export default function RootLayout({
           <ReadingProgressProvider>
             <BookmarksProvider>
               <CollectionsProvider>
-                <TooltipProvider delay={300}>{children}</TooltipProvider>
+                <TooltipProvider delay={300}>
+                  {children}
+                  <StreakCelebration />
+                </TooltipProvider>
               </CollectionsProvider>
             </BookmarksProvider>
           </ReadingProgressProvider>

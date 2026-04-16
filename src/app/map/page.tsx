@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
+import { QiblaCompass } from "@/components/dashboard/qibla-compass";
 
 const RevelationMap = dynamic(
   () =>
@@ -19,8 +20,16 @@ export default function MapPage() {
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-hidden p-2 pt-14 md:pt-2">
+      <main className="relative flex-1 overflow-hidden p-2 pt-14 md:pt-2">
         <RevelationMap />
+        {/* Qibla compass overlay — top-right on desktop, moves to a
+            bottom-left drawer on mobile where the map controls occupy
+            the top area */}
+        <div className="pointer-events-none absolute right-4 top-20 z-10 hidden w-64 md:block">
+          <div className="pointer-events-auto">
+            <QiblaCompass />
+          </div>
+        </div>
       </main>
     </div>
   );

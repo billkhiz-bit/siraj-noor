@@ -11,14 +11,16 @@ import {
   TafsirButton,
   TafsirPanel,
 } from "@/components/dashboard/tafsir-button";
+import { ShareVerseButton } from "@/components/dashboard/share-verse-button";
 import type { Verse } from "@/lib/quran-api";
 import type { Tafsir } from "@/lib/quran-api";
 
 interface VerseRowProps {
   verse: Verse;
+  surahEnglish?: string;
 }
 
-export function VerseRow({ verse }: VerseRowProps) {
+export function VerseRow({ verse, surahEnglish }: VerseRowProps) {
   const [tafsirOpen, setTafsirOpen] = useState(false);
   const [tafsir, setTafsir] = useState<Tafsir | null>(null);
   const [fetchAttempted, setFetchAttempted] = useState(false);
@@ -61,6 +63,12 @@ export function VerseRow({ verse }: VerseRowProps) {
               setTafsir(t);
               setFetchAttempted(true);
             }}
+          />
+          <ShareVerseButton
+            verseKey={verse.verse_key}
+            arabic={verse.text_uthmani}
+            translation={verse.translation}
+            surahEnglish={surahEnglish}
           />
         </div>
       </div>

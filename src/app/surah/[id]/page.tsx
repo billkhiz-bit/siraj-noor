@@ -126,7 +126,11 @@ export default async function SurahDetailPage({
             <h2 className="mb-4 text-lg font-semibold">All Verses</h2>
             <div className="space-y-4">
               {verses.map((verse) => (
-                <VerseRow key={verse.verse_key} verse={verse} />
+                <VerseRow
+                  key={verse.verse_key}
+                  verse={verse}
+                  surahEnglish={`${surah.number}. ${surah.nameEnglish}`}
+                />
               ))}
             </div>
           </div>
