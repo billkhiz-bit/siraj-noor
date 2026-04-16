@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { VerseVisualisation } from "@/components/dashboard/verse-visualisation-dynamic";
 import { ChapterAudioPlayer } from "@/components/dashboard/chapter-audio-player";
-import { BookmarkButton } from "@/components/auth/bookmark-button";
+import { VerseRow } from "@/components/dashboard/verse-row";
 import { ReadingTracker } from "@/components/auth/reading-tracker";
 import { Badge } from "@/components/ui/badge";
 import { surahs } from "@/lib/data/surahs";
@@ -126,39 +126,7 @@ export default async function SurahDetailPage({
             <h2 className="mb-4 text-lg font-semibold">All Verses</h2>
             <div className="space-y-4">
               {verses.map((verse) => (
-                <div
-                  key={verse.verse_key}
-                  id={`verse-${verse.verse_key}`}
-                  className="rounded-lg border border-border bg-card p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent font-mono text-xs font-medium text-accent-foreground">
-                      {verse.verse_number}
-                    </span>
-                    <div className="flex-1 space-y-2">
-                      <p
-                        className="text-right font-mono text-xl leading-loose text-foreground"
-                        dir="rtl"
-                        lang="ar"
-                      >
-                        {verse.text_uthmani}
-                      </p>
-                      {verse.translation && (
-                        <p className="text-sm leading-relaxed text-foreground/80">
-                          {verse.translation}
-                        </p>
-                      )}
-                      {verse.transliteration && (
-                        <p className="font-mono text-xs italic leading-relaxed text-muted-foreground">
-                          {verse.transliteration}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <BookmarkButton verseKey={verse.verse_key} />
-                    </div>
-                  </div>
-                </div>
+                <VerseRow key={verse.verse_key} verse={verse} />
               ))}
             </div>
           </div>

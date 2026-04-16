@@ -124,6 +124,50 @@ export interface ChapterAudio {
   reciterId: number;
 }
 
+// Sayyid Abul A`la Maududi's English tafsir — a modern, readable
+// commentary that sits well next to the Sahih International
+// translation. Qur'an.com tafsir id is 169. Switching to Ibn Kathir
+// (id 168 — "Ibn Kathir [Abridged English]" in the /quran/tafsirs
+// list) is a one-line change if we ever expose a picker.
+const DEFAULT_TAFSIR_ID = 169;
+
+export interface Tafsir {
+  verseKey: string;
+  name: string;
+  language: string;
+  text: string; // HTML — may contain <p>, <br>, etc.
+}
+
+export async function fetchTafsir(
+  verseKey: string,
+  tafsirId: number = DEFAULT_TAFSIR_ID
+): Promise<Tafsir | null> {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/tafsirs/${tafsirId}/by_ayah/${verseKey}`,
+      { cache: "force-cache" }
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      tafsir?: {
+        verse_key: string;
+        resource_name?: string;
+        language_name?: string;
+        text?: string;
+      };
+    };
+    if (!data.tafsir?.text) return null;
+    return {
+      verseKey: data.tafsir.verse_key,
+      name: data.tafsir.resource_name ?? "Commentary",
+      language: data.tafsir.language_name ?? "en",
+      text: data.tafsir.text,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchChapterAudio(
   chapterId: number,
   reciterId: number = DEFAULT_RECITER_ID
