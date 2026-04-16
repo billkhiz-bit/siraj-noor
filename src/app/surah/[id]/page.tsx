@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { VerseVisualisation } from "@/components/dashboard/verse-visualisation-dynamic";
+import { ChapterAudioPlayer } from "@/components/dashboard/chapter-audio-player";
 import { BookmarkButton } from "@/components/auth/bookmark-button";
 import { ReadingTracker } from "@/components/auth/reading-tracker";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +93,7 @@ export default async function SurahDetailPage({
 
           {/* Chapter info */}
           {chapterInfo?.short_text && (
-            <p className="mb-6 text-sm text-muted-foreground leading-relaxed">
+            <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
               {chapterInfo.short_text}
               {chapterInfo.source && (
                 <span className="ml-1 text-xs text-muted-foreground">
@@ -101,6 +102,14 @@ export default async function SurahDetailPage({
               )}
             </p>
           )}
+
+          {/* Recitation audio */}
+          <ChapterAudioPlayer
+            chapterId={surah.number}
+            surahName={surah.nameEnglish}
+          />
+          <div className="mb-6" />
+
 
           {/* 3D Verse visualisation */}
           <div className="mb-8">

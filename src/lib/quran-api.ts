@@ -114,6 +114,41 @@ export async function fetchChapterInfo(chapterId: number): Promise<ChapterInfo |
   }
 }
 
+// Mishary Rashid al-Afasy (Murattal). Qur'an.com's default reciter —
+// distinctive, clear, widely recognised. id 7 per /recitations.
+const DEFAULT_RECITER_ID = 7;
+
+export interface ChapterAudio {
+  audioUrl: string;
+  durationSeconds: number;
+  reciterId: number;
+}
+
+export async function fetchChapterAudio(
+  chapterId: number,
+  reciterId: number = DEFAULT_RECITER_ID
+): Promise<ChapterAudio | null> {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/chapter_recitations/${reciterId}/${chapterId}`,
+      { cache: "force-cache" }
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      audio_file?: { audio_url?: string; duration?: number };
+    };
+    const audioUrl = data.audio_file?.audio_url;
+    if (!audioUrl) return null;
+    return {
+      audioUrl,
+      durationSeconds: data.audio_file?.duration ?? 0,
+      reciterId,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchVerseByKey(verseKey: string): Promise<Verse | null> {
   try {
     const res = await fetch(

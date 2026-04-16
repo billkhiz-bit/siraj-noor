@@ -63,10 +63,12 @@ function buildCells(sessions: ReadingSession[]): CellData[] {
 interface CellMeshProps {
   cell: CellData;
   onHover: (c: CellData | null) => void;
+  onClick: (c: CellData) => void;
   hovered: boolean;
+  selected: boolean;
 }
 
-function CellMesh({ cell, onHover, hovered }: CellMeshProps) {
+function CellMesh({ cell, onHover, onClick, hovered, selected }: CellMeshProps) {
   const ref = useRef<THREE.Mesh>(null);
 
   const intensity = Math.min(cell.count / SATURATE_AT, 1);
@@ -84,7 +86,11 @@ function CellMesh({ cell, onHover, hovered }: CellMeshProps) {
 
   useFrame((state) => {
     if (!ref.current) return;
-    const targetY = hovered ? targetHeight + 0.4 : targetHeight;
+    // Selected cells get an additional lift so it's obvious which one
+    // is pinned, even when the user orbits the camera away from the
+    // tooltip. Hover is a smaller lift below.
+    const liftBase = selected ? 0.7 : hovered ? 0.4 : 0;
+    const targetY = targetHeight + liftBase;
     ref.current.scale.y = THREE.MathUtils.lerp(
       ref.current.scale.y,
       Math.max(targetY, 0.05),
@@ -97,11 +103,17 @@ function CellMesh({ cell, onHover, hovered }: CellMeshProps) {
     const todayPulse = cell.isToday
       ? 1.2 + Math.sin(state.clock.elapsedTime * 2.4) * 0.35
       : null;
+    // Selected cells get a rhythmic pulse of their own so clicked-but-empty
+    // cells still read as "this one is selected" on the visually flat 0-count
+    // colour.
+    const selectedPulse = selected
+      ? 1.6 + Math.sin(state.clock.elapsedTime * 3.5) * 0.4
+      : null;
     const targetEmissive =
-      todayPulse ?? (intensity > 0 ? 0.55 : 0.05);
+      selectedPulse ?? todayPulse ?? (intensity > 0 ? 0.55 : 0.05);
     mat.emissiveIntensity = THREE.MathUtils.lerp(
       mat.emissiveIntensity,
-      hovered ? 1.4 : targetEmissive,
+      hovered && !selected ? 1.4 : targetEmissive,
       0.15
     );
   });
@@ -118,6 +130,10 @@ function CellMesh({ cell, onHover, hovered }: CellMeshProps) {
       onPointerOut={() => {
         onHover(null);
         document.body.style.cursor = "auto";
+      }}
+      onClick={(e: ThreeEvent<MouseEvent>) => {
+        e.stopPropagation();
+        onClick(cell);
       }}
     >
       <boxGeometry args={[CELL_SIZE, 1, CELL_SIZE]} />
@@ -152,11 +168,15 @@ function FloorPlate() {
 function Scene({
   cells,
   onHover,
+  onSelect,
   hoveredIndex,
+  selectedIndex,
 }: {
   cells: CellData[];
   onHover: (c: CellData | null) => void;
+  onSelect: (c: CellData) => void;
   hoveredIndex: number | null;
+  selectedIndex: number | null;
 }) {
   return (
     <>
@@ -177,7 +197,9 @@ function Scene({
           key={cell.isoDate}
           cell={cell}
           onHover={onHover}
+          onClick={onSelect}
           hovered={hoveredIndex === cell.index}
+          selected={selectedIndex === cell.index}
         />
       ))}
 
@@ -220,11 +242,22 @@ function Scene({
 
 interface Activity3DProps {
   sessions: ReadingSession[];
+  selectedIsoDate?: string | null;
+  onDaySelect?: (isoDate: string | null) => void;
 }
 
-export function Activity3D({ sessions }: Activity3DProps) {
+export function Activity3D({
+  sessions,
+  selectedIsoDate,
+  onDaySelect,
+}: Activity3DProps) {
   const cells = useMemo(() => buildCells(sessions), [sessions]);
   const [hovered, setHovered] = useState<CellData | null>(null);
+
+  const selectedCell = useMemo(() => {
+    if (!selectedIsoDate) return null;
+    return cells.find((c) => c.isoDate === selectedIsoDate) ?? null;
+  }, [cells, selectedIsoDate]);
 
   const totals = useMemo(() => {
     const activeDays = cells.filter((c) => c.count > 0).length;
@@ -268,11 +301,17 @@ export function Activity3D({ sessions }: Activity3DProps) {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.25;
         }}
+        // Click on empty space dismisses the pinned cell — matches the
+        // click-to-pin + click-empty-to-dismiss pattern used on the
+        // Surah Ring and the Word Cloud.
+        onPointerMissed={() => onDaySelect?.(null)}
       >
         <Scene
           cells={cells}
           onHover={setHovered}
+          onSelect={(c) => onDaySelect?.(c.isoDate)}
           hoveredIndex={hovered?.index ?? null}
+          selectedIndex={selectedCell?.index ?? null}
         />
       </Canvas>
 
