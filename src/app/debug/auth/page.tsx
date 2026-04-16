@@ -3,17 +3,15 @@
 // /debug/auth — diagnostic page for the QF User API 403 invalid_token issue.
 //
 // When signed in, this page runs a battery of probes against the user's
-// current session and reports the results. Useful for:
-//   - Decoding the JWT access token and inspecting iss/aud/exp/scope
-//   - Probing /oauth2/userinfo as a sanity check (same token, different
-//     resource server)
-//   - Trying Authorization: Bearer as an alternative to x-auth-token
-//   - Testing token refresh + retry
-//   - Collecting a structured diagnostic report for QF support
+// current session and reports the results. Section A runs every network
+// check with the ORIGINAL, untouched access token. Section B then
+// triggers refreshTokens() and re-tests, to prove whether Hydra's
+// refresh_token grant revokes the old access token (which would explain
+// the 403s we've been chasing).
 //
 // Nothing here is user-facing — the page is behind /debug/auth and
-// doesn't appear in the sidebar. It's strictly a tool for debugging
-// the 403 issue. Remove or hide once the underlying problem is fixed.
+// doesn't appear in the sidebar. Remove or hide once the underlying
+// problem is fixed.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -61,6 +59,8 @@ function decodeJwt(token: string): {
   }
 }
 
+const PRELIVE_API = "https://apis-prelive.quran.foundation/auth/v1";
+
 export default function DebugAuthPage() {
   const [probes, setProbes] = useState<ProbeResult[]>([]);
   const [tokenInfo, setTokenInfo] = useState<{
@@ -99,8 +99,8 @@ export default function DebugAuthPage() {
   }, []);
 
   async function runProbes() {
-    const tokens = loadTokens();
-    if (!tokens) {
+    const originalTokens = loadTokens();
+    if (!originalTokens) {
       setProbes([
         {
           name: "No tokens",
@@ -111,166 +111,32 @@ export default function DebugAuthPage() {
       return;
     }
 
+    const originalToken = originalTokens.accessToken;
     const results: ProbeResult[] = [];
     const push = (result: ProbeResult) => {
       results.push(result);
       setProbes([...results]);
     };
+    const updateLast = (patch: Partial<ProbeResult>) => {
+      results[results.length - 1] = {
+        ...results[results.length - 1],
+        ...patch,
+      };
+      setProbes([...results]);
+    };
 
-    // Probe 1: OIDC /userinfo with x-auth-token
-    push({ name: "1. /userinfo with x-auth-token", status: "pending" });
-    try {
-      const r = await fetch(`${QF_AUTH_HOST}/userinfo`, {
-        headers: {
-          "x-auth-token": tokens.accessToken,
-          "x-client-id": QF_CLIENT_ID,
-        },
-      });
-      const body = await r.text();
-      let parsed: unknown = body;
+    // Wraps a single network probe with consistent error handling, JSON
+    // parsing, and status-code → success/error mapping. Every Section A
+    // probe uses this helper so the closure only ever captures
+    // originalToken — no accidental state changes between calls.
+    async function probe(
+      name: string,
+      fetcher: () => Promise<Response>,
+      detailSuffix = ""
+    ): Promise<void> {
+      push({ name, status: "pending" });
       try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: "1. /userinfo with x-auth-token",
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status}`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: "1. /userinfo with x-auth-token",
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 2: OIDC /userinfo with Authorization: Bearer
-    push({ name: "2. /userinfo with Authorization: Bearer", status: "pending" });
-    try {
-      const r = await fetch(`${QF_AUTH_HOST}/userinfo`, {
-        headers: {
-          authorization: `Bearer ${tokens.accessToken}`,
-        },
-      });
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: "2. /userinfo with Authorization: Bearer",
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status}`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: "2. /userinfo with Authorization: Bearer",
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 3: User API /bookmarks with x-auth-token (current app behaviour)
-    push({
-      name: "3. /auth/v1/bookmarks with x-auth-token + x-client-id",
-      status: "pending",
-    });
-    try {
-      const r = await fetch(`${QF_API_BASE}/bookmarks`, {
-        headers: {
-          "x-auth-token": tokens.accessToken,
-          "x-client-id": QF_CLIENT_ID,
-        },
-      });
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: "3. /auth/v1/bookmarks with x-auth-token + x-client-id",
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status}`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: "3. /auth/v1/bookmarks with x-auth-token + x-client-id",
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 4: User API /bookmarks with Authorization: Bearer + x-client-id
-    push({
-      name: "4. /auth/v1/bookmarks with Authorization: Bearer + x-client-id",
-      status: "pending",
-    });
-    try {
-      const r = await fetch(`${QF_API_BASE}/bookmarks`, {
-        headers: {
-          authorization: `Bearer ${tokens.accessToken}`,
-          "x-client-id": QF_CLIENT_ID,
-        },
-      });
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: "4. /auth/v1/bookmarks with Authorization: Bearer + x-client-id",
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status}`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: "4. /auth/v1/bookmarks with Authorization: Bearer + x-client-id",
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 5: Refresh token, retry /bookmarks with new token
-    push({
-      name: "5. Refresh token + retry /bookmarks",
-      status: "pending",
-    });
-    try {
-      const refreshed = await refreshTokens();
-      if (!refreshed) {
-        results[results.length - 1] = {
-          name: "5. Refresh token + retry /bookmarks",
-          status: "error",
-          detail: "Refresh returned null — refresh token rejected or absent",
-        };
-        setProbes([...results]);
-      } else {
-        const r = await fetch(`${QF_API_BASE}/bookmarks`, {
-          headers: {
-            "x-auth-token": refreshed.accessToken,
-            "x-client-id": QF_CLIENT_ID,
-          },
-        });
+        const r = await fetcher();
         const body = await r.text();
         let parsed: unknown = body;
         try {
@@ -278,296 +144,227 @@ export default function DebugAuthPage() {
         } catch {
           /* leave as string */
         }
-        results[results.length - 1] = {
-          name: "5. Refresh token + retry /bookmarks",
+        updateLast({
           status: r.ok ? "success" : "error",
-          detail: `HTTP ${r.status} (using refreshed token)`,
+          detail: `HTTP ${r.status}${detailSuffix}`,
           data: parsed,
-        };
-        setProbes([...results]);
-      }
-    } catch (err) {
-      results[results.length - 1] = {
-        name: "5. Refresh token + retry /bookmarks",
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 6: hit apis-prelive.quran.foundation directly (Basit pointed out 2026-04-15 that prelive uses a different API host than prod)
-    const PROBE_6_NAME =
-      "6. apis-prelive /auth/v1/bookmarks with x-auth-token + x-client-id";
-    push({ name: PROBE_6_NAME, status: "pending" });
-    try {
-      const r = await fetch(
-        "https://apis-prelive.quran.foundation/auth/v1/bookmarks",
-        {
-          headers: {
-            "x-auth-token": tokens.accessToken,
-            "x-client-id": QF_CLIENT_ID,
-          },
-        }
-      );
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: PROBE_6_NAME,
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status}`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: PROBE_6_NAME,
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 7: decode id_token — if its aud has client_id while access_token has aud:[], Hydra is deliberately not setting access_token aud
-    const PROBE_7_NAME = "7. Decode id_token and inspect aud/sub/iss claims";
-    push({ name: PROBE_7_NAME, status: "pending" });
-    try {
-      if (!tokens.idToken) {
-        results[results.length - 1] = {
-          name: PROBE_7_NAME,
+        });
+      } catch (err) {
+        updateLast({
           status: "error",
-          detail: "No id_token present in localStorage",
-        };
+          detail: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    // ══ Section A — original, untouched token ═══════════════════════════
+    // If any of these return 422 (validation) or 200 (success), the token
+    // is valid and the 403s we've been chasing are something else.
+
+    await probe(
+      "A1. apis-prelive /bookmarks?mushafId=4&first=1 (Basit's valid repro URL)",
+      () =>
+        fetch(`${PRELIVE_API}/bookmarks?mushafId=4&first=1`, {
+          headers: {
+            "x-auth-token": originalToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        })
+    );
+
+    await probe(
+      "A2. apis-prelive /bookmarks (no mushafId — 422 here proves auth passed)",
+      () =>
+        fetch(`${PRELIVE_API}/bookmarks`, {
+          headers: {
+            "x-auth-token": originalToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        })
+    );
+
+    await probe(
+      "A3. apis-prelive /streaks (different User API path)",
+      () =>
+        fetch(`${PRELIVE_API}/streaks`, {
+          headers: {
+            "x-auth-token": originalToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        })
+    );
+
+    await probe(
+      "A4. apis-prelive /collections (different User API path)",
+      () =>
+        fetch(`${PRELIVE_API}/collections`, {
+          headers: {
+            "x-auth-token": originalToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        })
+    );
+
+    await probe(
+      "A5. apis-prelive /bookmarks?mushafId=4&first=1 via Pages Function (server-side, no browser Origin)",
+      () =>
+        fetch("/api/qf/test-proxy", {
+          headers: {
+            "x-auth-token": originalToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        }),
+      " (via proxy)"
+    );
+
+    await probe(
+      "A6. Server-side Hydra /oauth2/userinfo (parallel Bearer + x-auth-token)",
+      () =>
+        fetch("/api/qf/test-userinfo", {
+          headers: {
+            "x-auth-token": originalToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        }),
+      " (via proxy)"
+    );
+
+    await probe(
+      "A7. apis.quran.foundation /content/api/v4/chapters/1",
+      () =>
+        fetch(
+          "https://apis.quran.foundation/content/api/v4/chapters/1",
+          {
+            headers: {
+              "x-auth-token": originalToken,
+              "x-client-id": QF_CLIENT_ID,
+            },
+          }
+        )
+    );
+
+    await probe(
+      "A8. apis-prelive /bookmarks with Authorization: Bearer (format check)",
+      () =>
+        fetch(`${PRELIVE_API}/bookmarks`, {
+          headers: {
+            authorization: `Bearer ${originalToken}`,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        })
+    );
+
+    await probe(
+      "A9. Browser Hydra /userinfo with x-auth-token (CORS expected)",
+      () =>
+        fetch(`${QF_AUTH_HOST}/userinfo`, {
+          headers: {
+            "x-auth-token": originalToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        })
+    );
+
+    await probe(
+      "A10. Browser Hydra /userinfo with Authorization: Bearer (CORS expected)",
+      () =>
+        fetch(`${QF_AUTH_HOST}/userinfo`, {
+          headers: {
+            authorization: `Bearer ${originalToken}`,
+          },
+        })
+    );
+
+    await probe(
+      "A11. QF_API_BASE /bookmarks (whatever env host the build baked in)",
+      () =>
+        fetch(`${QF_API_BASE}/bookmarks?mushafId=4&first=1`, {
+          headers: {
+            "x-auth-token": originalToken,
+            "x-client-id": QF_CLIENT_ID,
+          },
+        })
+    );
+
+    // A12: decode id_token locally (no network)
+    push({
+      name: "A12. Decode id_token (local, no network)",
+      status: "pending",
+    });
+    if (!originalTokens.idToken) {
+      updateLast({ status: "error", detail: "No id_token in localStorage" });
+    } else {
+      const idDecoded = decodeJwt(originalTokens.idToken);
+      updateLast({
+        status: "success",
+        detail: "decoded locally",
+        data: {
+          id_token_header: idDecoded.header,
+          id_token_payload: idDecoded.payload,
+        },
+      });
+    }
+
+    // ══ Section B — refresh and test whether the old token is now revoked ═
+    // Hydra defaults to revoking the prior access token when a
+    // refresh_token grant is used. If that's the bug, B3 will return 403
+    // invalid_token on the SAME URL where A1 just succeeded.
+
+    push({
+      name: "B1. refreshTokens() — rotate access token",
+      status: "pending",
+    });
+    let refreshed: Awaited<ReturnType<typeof refreshTokens>> = null;
+    try {
+      refreshed = await refreshTokens();
+      if (!refreshed) {
+        updateLast({
+          status: "error",
+          detail: "refresh returned null — refresh token rejected",
+        });
       } else {
-        const idDecoded = decodeJwt(tokens.idToken);
-        results[results.length - 1] = {
-          name: PROBE_7_NAME,
+        updateLast({
           status: "success",
-          detail: "decoded locally (no network)",
+          detail: "refreshed ok",
           data: {
-            id_token_header: idDecoded.header,
-            id_token_payload: idDecoded.payload,
+            new_token_prefix: refreshed.accessToken.slice(0, 40) + "…",
+            new_token_length: refreshed.accessToken.length,
+            new_is_same_as_original:
+              refreshed.accessToken === originalToken,
           },
-        };
+        });
       }
-      setProbes([...results]);
     } catch (err) {
-      results[results.length - 1] = {
-        name: PROBE_7_NAME,
+      updateLast({
         status: "error",
         detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 8: different user API endpoint — tests whether rejection is endpoint-specific or universal
-    const PROBE_8_NAME = "8. /auth/v1/streaks with x-auth-token + x-client-id";
-    push({ name: PROBE_8_NAME, status: "pending" });
-    try {
-      const r = await fetch(`${QF_API_BASE}/streaks`, {
-        headers: {
-          "x-auth-token": tokens.accessToken,
-          "x-client-id": QF_CLIENT_ID,
-        },
       });
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: PROBE_8_NAME,
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status}`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: PROBE_8_NAME,
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
     }
 
-    // Probe 9: content API with same token — if it returns a different error than /auth/v1/*, rejection is per-path not per-token
-    const PROBE_9_NAME =
-      "9. /content/api/v4/chapters/1 with x-auth-token + x-client-id";
-    push({ name: PROBE_9_NAME, status: "pending" });
-    try {
-      const r = await fetch(
-        "https://apis.quran.foundation/content/api/v4/chapters/1",
-        {
-          headers: {
-            "x-auth-token": tokens.accessToken,
-            "x-client-id": QF_CLIENT_ID,
-          },
-        }
+    if (refreshed) {
+      const newToken = refreshed.accessToken;
+
+      await probe(
+        "B2. Retry A1 with NEW token (expect same result as A1)",
+        () =>
+          fetch(`${PRELIVE_API}/bookmarks?mushafId=4&first=1`, {
+            headers: {
+              "x-auth-token": newToken,
+              "x-client-id": QF_CLIENT_ID,
+            },
+          })
       );
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: PROBE_9_NAME,
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status}`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: PROBE_9_NAME,
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
 
-    // Probe 10: Basit's exact repro URL with mushafId+first query params (2026-04-15 reply — he says this works on his side with aud:[])
-    const PROBE_10_NAME =
-      "10. apis-prelive bookmarks with ?mushafId=4&first=1 (Basit's repro URL)";
-    push({ name: PROBE_10_NAME, status: "pending" });
-    try {
-      const r = await fetch(
-        "https://apis-prelive.quran.foundation/auth/v1/bookmarks?mushafId=4&first=1",
-        {
-          headers: {
-            "x-auth-token": tokens.accessToken,
-            "x-client-id": QF_CLIENT_ID,
-          },
-        }
+      await probe(
+        "B3. Retry A1 with ORIGINAL token (403 here = Hydra revoked it on refresh)",
+        () =>
+          fetch(`${PRELIVE_API}/bookmarks?mushafId=4&first=1`, {
+            headers: {
+              "x-auth-token": originalToken,
+              "x-client-id": QF_CLIENT_ID,
+            },
+          })
       );
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: PROBE_10_NAME,
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status}`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: PROBE_10_NAME,
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 11: same request as probe 10 but via a Cloudflare Pages Function that forwards server-side — tests the browser Origin-header rejection hypothesis
-    const PROBE_11_NAME =
-      "11. Probe 10 via Pages Function proxy (server-side, no browser Origin)";
-    push({ name: PROBE_11_NAME, status: "pending" });
-    try {
-      const r = await fetch("/api/qf/test-proxy", {
-        headers: {
-          "x-auth-token": tokens.accessToken,
-          "x-client-id": QF_CLIENT_ID,
-        },
-      });
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: PROBE_11_NAME,
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status} (via proxy)`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: PROBE_11_NAME,
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 12: server-side /oauth2/userinfo via Pages Function — browser probes 1+2 fail CORS, but this one bypasses the browser Origin entirely. Tests BOTH Bearer and x-auth-token formats in parallel via test-userinfo.ts
-    const PROBE_12_NAME =
-      "12. Server-side /oauth2/userinfo via Pages Function (tests both Bearer and x-auth-token)";
-    push({ name: PROBE_12_NAME, status: "pending" });
-    try {
-      const r = await fetch("/api/qf/test-userinfo", {
-        headers: {
-          "x-auth-token": tokens.accessToken,
-          "x-client-id": QF_CLIENT_ID,
-        },
-      });
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: PROBE_12_NAME,
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status} (via proxy)`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: PROBE_12_NAME,
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
-    }
-
-    // Probe 13: Hydra token introspection — definitive statement from Hydra about whether it considers this token active
-    const PROBE_13_NAME =
-      "13. Hydra /oauth2/introspect via Pages Function (ground truth on token state)";
-    push({ name: PROBE_13_NAME, status: "pending" });
-    try {
-      const r = await fetch("/api/qf/test-introspect", {
-        headers: { "x-auth-token": tokens.accessToken },
-      });
-      const body = await r.text();
-      let parsed: unknown = body;
-      try {
-        parsed = JSON.parse(body);
-      } catch {
-        /* leave as string */
-      }
-      results[results.length - 1] = {
-        name: PROBE_13_NAME,
-        status: r.ok ? "success" : "error",
-        detail: `HTTP ${r.status} (via proxy)`,
-        data: parsed,
-      };
-      setProbes([...results]);
-    } catch (err) {
-      results[results.length - 1] = {
-        name: PROBE_13_NAME,
-        status: "error",
-        detail: err instanceof Error ? err.message : String(err),
-      };
-      setProbes([...results]);
     }
   }
 
@@ -584,8 +381,10 @@ export default function DebugAuthPage() {
           Auth Debug
         </h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Diagnostic probes for the QF User API 403 issue. Not linked from
-          anywhere — navigate here manually when signed in.
+          Diagnostic probes for the QF User API 403 issue. Section A tests
+          the original token; Section B triggers refresh and re-tests to
+          isolate whether Hydra revokes access tokens on refresh. Not
+          linked from anywhere — navigate here manually when signed in.
         </p>
       </div>
 
@@ -706,13 +505,16 @@ export default function DebugAuthPage() {
 
       <section className="text-xs text-muted-foreground">
         <h3 className="mb-2 font-semibold text-foreground">
-          How to share this with Basit
+          How to read Section A vs Section B
         </h3>
         <p className="mb-2">
-          Once probes finish, screenshot this page (or copy the JWT payload
-          and probe outputs) and paste into the follow-up email thread.
-          That gives him the exact token claims and endpoint responses he
-          needs to diagnose the audience/issuer mismatch on his side.
+          If any Section A probe returns 422 or 200 on a User API path, the
+          original token is valid — the 403s across the app are caused by
+          something that happens later in the lifecycle, not by a bad token
+          at mint time. If B3 returns 403 invalid_token on the exact URL
+          where A1 succeeded, Hydra is revoking the old access token on
+          refresh and the fix is to always use the latest token returned
+          from refresh rather than the closure-captured one.
         </p>
       </section>
     </main>

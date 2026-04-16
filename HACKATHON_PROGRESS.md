@@ -279,6 +279,122 @@ The `/debug/auth` page now has **13 probes** plus three Pages Function helpers. 
 
 ---
 
+## Day 5 — 2026-04-16 (Basit's 4th reply, audit round 2, fourth email staged)
+
+### Basit's 4th reply — ruled out two of our own conclusions
+
+Basit replied to the third evidence bundle. On his side, his team:
+- Minted a fresh prelive access token for client `3d0bebd0-110c-44bb-a097-746cf6a9615b` with `aud: []`.
+- `GET https://apis-prelive.quran.foundation/auth/v1/bookmarks` → 422 (mushafId required, expected).
+- `GET https://apis-prelive.quran.foundation/auth/v1/bookmarks?mushafId=4&first=1` → **200 OK**.
+
+This rules out two narrower theories our third bundle implied:
+1. `aud: []` by itself is enough to cause 403 invalid_token. It is not — Basit's token has the same `aud: []` and validates fine.
+2. Tokens from client `3d0bebd0-…` are being universally rejected by downstream prelive API validation. They are not — his reproduction proves the gateway does accept tokens from this client.
+
+Basit asked for a minimal repro: authorize URL, `/oauth2/token` exchange, token storage/refresh, header construction, and the exact bookmarks call. The difference between his successful reproduction and our failure on the same client ID must be either in how the token is minted (grant type, consent flow, admin issuance) or in a request detail we haven't surfaced. Browser vs server, hostname, query params, header format, origin, user-agent are all already ruled out by probes 6, 10, 11, 12.
+
+### Audit round 2 — static audit of the integration code
+
+Systematic re-read of every OAuth surface before preparing the reply. Findings:
+
+**No bugs causing the 403.** The PKCE generation, authorize URL construction, token exchange through the Cloudflare Pages Function proxy, `client_secret_basic` Basic auth header, refresh flow, token storage with snapshot cache, callback state validation, and User API header assembly all match QF's quickstart and RFC 6749 / 7636 verbatim.
+
+**Three cleanup items surfaced — none are the 403, all worth fixing before Basit reads our repro so he doesn't chase red herrings:**
+
+1. **Hostname inconsistency.** `.env.local` had `NEXT_PUBLIC_QF_API_HOST=https://apis.quran.foundation` while OAuth pointed at prelive. DNS-equivalent to `apis-prelive.*` (proven by probes 6, 10), but visually inconsistent with Basit's logical split. Flipped to `apis-prelive.quran.foundation`.
+
+2. **`listBookmarks` missing required `mushafId`.** QF docs mark `mushafId` as required on `GET /auth/v1/bookmarks`. Our code called `/bookmarks` with zero params. Probe 10 with `mushafId=4&first=1` still got 403, so not the cause — but a latent second failure waiting once auth unblocks. Added `DEFAULT_MUSHAF_ID = 4` (Hafs) and threaded it as a default parameter on `listBookmarks(mushafId = 4)`.
+
+3. **`Content-Type: application/json` sent on every request, including GETs.** Harmless in practice but looks odd in a minimal repro and can trigger stricter gateways to preflight. Gated on `init.body !== undefined` so GETs go out clean.
+
+Also tightened `authHeaders` return type from `HeadersInit` (broad union) to `Record<string, string>` so the spread in `qfFetch` composes without a cast.
+
+Typecheck and ESLint both clean after changes.
+
+### Deploy — `https://d540c153.siraj-noor.pages.dev` (2026-04-16)
+
+`npm run deploy` succeeded first try. 134 static pages, 1174 files uploaded. Verified by grepping the deployed JS chunks linked from the landing page: only `apis-prelive.quran.foundation` appears in the user request path, no residual `apis.quran.foundation` (the `/debug/auth` page's probe 9 intentionally keeps a hardcoded `apis.quran.foundation/content/api/v4/chapters/1` for the per-path rejection check).
+
+### Fourth email drafted, staged for send
+
+Draft at `C:\Users\bilal\siraj-noor-email-basit-minimal-repro.txt`. Structure:
+
+1. TL;DR up front: same 403 reproduces from both browser and server-side Worker.
+2. **Section 1** — authorize URL with every param explicitly listed (PKCE S256, scopes, state, nonce, redirect_uri with trailing slash).
+3. **Section 2** — exact POST the Pages Function proxy makes to `/oauth2/token`: Basic auth, form body, grant_type, code, code_verifier, redirect_uri.
+4. **Section 3** — the full `authHeaders` function from `src/lib/qf-user-api.ts` showing token selection (localStorage → refresh-if-stale → throw-if-null) and header construction (`x-auth-token` + `x-client-id`, nothing else).
+5. **Section 4** — the exact `GET` against `/auth/v1/bookmarks?mushafId=4`, the 403 response body, and a re-statement that probe 10 (browser, his exact URL) and probe 11 (server-side Worker, his exact URL) both return byte-identical 403 with the same token. Plus probe 12 showing Hydra's own `/userinfo` rejects in both Bearer and x-auth-token formats.
+6. **Token claims block** with placeholders (sub, iat, exp, kid) to be filled from a fresh `/debug/auth` run post-deploy.
+7. **Clarifying question — the sharpest ask in the whole thread:** was his reproduction via `authorization_code` + PKCE through a real Hydra consent flow (matching ours), or `client_credentials` / admin-minted? And if safe: sub, scp, iat/exp of his validated token so we can diff claim-for-claim. This is the only unexamined variable left after 13 probes.
+
+### Pending manual steps (on next session)
+
+1. Open `https://siraj-noor.pages.dev/` in a fresh incognito window.
+2. Sign in through the full Hydra consent flow (crucial — Hydra caches client config at authentication time, not refresh).
+3. Navigate to `/debug/auth`, click **Run probes**.
+4. Copy sanitised JWT payload claims (sub, scp, iat, exp, kid) from the token panel into the four placeholders in the draft.
+5. Verify probes 3, 10, 11 still return 403 (expected — fixes are cleanup, not a fix for the actual bug). If any flip to 200, that's a major finding and we re-assess before sending.
+6. Send the draft as a reply on the `developers@quran.com` thread.
+
+---
+
+## Day 5 — afternoon (2026-04-16): root cause found, app end-to-end green
+
+The email to Basit was drafted but never sent. Running the probes one last time before sending revealed that the Day 4 "killer finding" (probe 12's 401 on Hydra `/userinfo`) was a closure-capture artefact in the debug page itself, not a Hydra misconfiguration.
+
+### What actually happened
+
+The debug page loaded `tokens` once at the top of `runProbes`. Probe 5 called `refreshTokens()` which rotated the access token — Hydra's default `refresh_token` grant revokes the previous access token atomically. Probes 6 onward kept reading from the closure-captured `tokens.accessToken`, which pointed at the **revoked** token. Every 403 and 401 from probe 5 onward was Hydra correctly rejecting a token it had just invalidated.
+
+Rewrote `/debug/auth/page.tsx` with Section A (all probes against the original, untouched token) then Section B (trigger refresh, then retry with both new and old tokens). Section A returned 200 on `/auth/v1/bookmarks?mushafId=4&first=1` — Basit's exact URL. Section B3 (the old token after refresh) returned the 403 we'd been chasing, confirming revocation-on-refresh.
+
+### The production bug was compound
+
+Once auth was cleared, three separate defects still blocked the real app:
+
+1. **Concurrent refresh storm** — sibling providers (`BookmarksProvider`, `CollectionsProvider`, `ReadingProgressProvider`) fire reload() simultaneously on `isAuthenticated` flip. Any that trip `isExpiredSoon` each trigger an independent `refreshTokens()`. Every parallel refresh revokes the prior access token, leaving every in-flight request holding a revoked one. Fixed by adding a single-flight gate with a 5-second result cache to `refreshTokens()` in `qf-oauth.ts`.
+
+2. **Retry-on-401 never fires** — QF's gateway wraps revoked-token errors as **403** `{"type":"invalid_token"}` not the RFC 6750 401. `qfFetch` only retried on 401. Fixed by broadening the retry condition to pattern-match `invalid_token` in 403 response bodies.
+
+3. **API contract mismatches** surfaced once the auth plumbing was healthy:
+   - `first` pagination param bounded to **1–20** by the OpenAPI spec — we'd picked 25. All list endpoints 422'd until reduced to 20.
+   - `/reading_sessions` snake_case path doesn't exist; QF uses **kebab-case** for multi-word resources (`/reading-sessions`). 403 `invalid_token` there was a catch-all response for unknown path rather than an actual auth error.
+   - Response shapes: QF returns `{success, data: T[], pagination}` on list endpoints and `{success, data: T}` on singletons — our code cast directly to the inner field. Built an adapter layer in `qf-user-api.ts` that unwraps the envelope and maps QF's camelCase shape (`createdAt`, `verseNumber`, `chapterNumber`, etc.) into the app's pre-existing snake_case shape. UI and providers stay untouched.
+   - POST bodies: `createBookmark` was sending `{verse_key, note}` — QF requires `{key, verseNumber, mushaf, type:"ayah"}` with `additionalProperties:false`. `createCollection` was sending `{name, description}` — QF only accepts `{name}`. `createReadingSession` was sending `{chapter_id, verse_key}` — QF requires `{chapterNumber, verseNumber}`. All fixed in the adapter.
+   - `getStreak` was calling `/streaks` (paginated history). The actual scalar endpoint is `/streaks/current-streak-days?type=QURAN` which returns `{success, data: {days}}`.
+
+### Network verification on main alias (`siraj-noor.pages.dev`)
+
+After the final deploy, a hard refresh on `/bookmarks/` produces exactly four User API calls:
+
+| Endpoint | Status |
+|---|---|
+| `bookmarks?mushafId=4&first=20` | 200 |
+| `collections?first=20` | 200 |
+| `streaks?first=20` | 200 |
+| `reading-sessions?first=20` | 200 |
+
+No 4xx, no retries fire, no error banner in the UI.
+
+### The OpenAPI spec check
+
+The single highest-leverage action of the week was four lines of bash:
+
+```bash
+curl -s https://api-docs.quran.foundation/openAPI/user-related-apis/v1.json \
+  -o qf-api.json
+node -e "const s=require('./qf-api.json'); console.log(JSON.stringify(s.paths, null, 2))"
+```
+
+Four days of email-based debugging vs. 30 seconds of reading the machine-readable spec. Worth banking as a reflex: **when an API returns unexpected 4xx and exposes an OpenAPI URL, read the spec before asking the vendor**. The `/llms.txt` + `/openAPI/*.json` combination is the canonical AI-friendly doc surface on this kind of platform.
+
+### Basit email — not sent
+
+The closure email will briefly acknowledge the root cause was on our side (closure-captured token in the probe page, pagination range, path convention) and thank him for his patience. Nothing actionable for QF to do. Will draft and send separately.
+
+---
+
 ## Quran Foundation API quick reference
 
 Full reference is in `~/.claude/projects/C--Users-bilal-projects-ayat/memory/quran_foundation_api.md`.
@@ -290,8 +406,15 @@ Full reference is in `~/.claude/projects/C--Users-bilal-projects-ayat/memory/qur
 | Token (prelive) | `https://prelive-oauth2.quran.foundation/oauth2/token` |
 | Logout (prelive) | `https://prelive-oauth2.quran.foundation/oauth2/sessions/logout` |
 | Production host | `oauth2.quran.foundation` (same paths) |
-| User API base | `https://apis.quran.foundation/auth/v1/` |
+| User API base (prelive) | `https://apis-prelive.quran.foundation/auth/v1/` |
+| User API base (production) | `https://apis.quran.foundation/auth/v1/` |
 | Support email | `developers@quran.com` (verified from qf-api-docs repo) |
+
+*Note: `apis.*` and `apis-prelive.*` CNAME to the same Cloudflare origin and
+behave identically (proven by probes 6 and 10 during the 403 investigation),
+but QF's docs describe a logical split and Basit's reproduction path expects
+prelive tokens to hit `apis-prelive.*`. As of 2026-04-16 our `.env.local`
+targets `apis-prelive.*` for the prelive client.*
 
 **Headers (NOT standard Bearer):**
 ```
@@ -308,17 +431,19 @@ x-client-id: <client_id>
 
 ## Currently blocked on
 
-### 1. Basit's response on the Hydra client config diff (highest priority)
+### 1. Basit's response on the grant-type question (highest priority)
 
-Third evidence bundle sent 2026-04-15 late evening via reply to the `developers@quran.com` thread. The narrative has evolved across the thread:
+Fourth email staged 2026-04-16, pending manual probe verification + claim fill-in before send. Draft at `C:\Users\bilal\siraj-noor-email-basit-minimal-repro.txt`. The narrative across the thread:
 
 1. First diagnosis (2026-04-14 evening): `aud: []` on access_token, ask to populate `allowed_audiences`.
 2. Basit replied suggesting hostname mismatch (`apis-prelive` vs `apis`).
 3. Second reply (2026-04-15 afternoon): disproved hostname theory with DNS evidence + probes 6/7/8/9, proved id_token has correct aud while access_token doesn't.
 4. Basit replied saying his team reproduced our client and confirmed Hydra issues aud:[] tokens, BUT on his side those tokens successfully reach backend validation on apis-prelive. So aud:[] alone isn't the cause. He asked for a minimal repro of the auth flow + API call.
-5. Third reply (2026-04-15 evening): minimal repro as requested PLUS the killer finding that Hydra's own `/userinfo` rejects the token in both Bearer and x-auth-token header formats with identical 401 `request_unauthorized`. This proves the issue is on Hydra's side (token issuance succeeds but validation fails at every downstream Hydra endpoint including Hydra's own OIDC layer), but it's NOT simply `allowed_audiences`.
+5. Third reply (2026-04-15 evening): minimal repro as requested PLUS the killer finding that Hydra's own `/userinfo` rejects the token in both Bearer and x-auth-token header formats with identical 401 `request_unauthorized`.
+6. Basit's 4th reply (2026-04-16 morning): on his side, `/auth/v1/bookmarks?mushafId=4&first=1` returns **200 OK** with a fresh aud:[] token from the same client. Rules out aud:[] alone and rules out universal rejection of this client's tokens. Asked for the minimal repro.
+7. Fourth email staged (2026-04-16 afternoon): minimal repro in 5 named sections + the grant-type clarifying question. Preceded by audit round 2 + deploy of three cleanup fixes (hostname alignment, `mushafId` default param, `Content-Type` gating) so the code Basit reads is the cleanest possible version of our integration.
 
-The third email's ask: pull up the full Hydra admin config for client `3d0bebd0-110c-44bb-a097-746cf6a9615b` (and prod `80ace9be-6835-4304-bb52-67b1bd891ff2`) and compare against whatever test client Basit used to reproduce. Specifically: `allowed_audiences`, `grant_types`, `response_types`, `token_endpoint_auth_method`, client-level scope list, custom metadata/flags.
+**The sharpest ask this email carries:** was Basit's reproduction via `authorization_code` + PKCE through a real Hydra consent flow (matching ours, with a user `sub`), or `client_credentials` / admin-minted (no user `sub`, or a synthetic one)? If he can share redacted sub, scp, iat, exp of his validated token we can diff claim-for-claim against ours and find the single difference. This is the only unexamined variable left after 13 probes.
 
 **Caveat for when the fix lands:** Hydra caches client config at authentication time, not refresh time. A simple token refresh will NOT pick up the new config. Must fully sign out via `/oauth2/sessions/logout` and sign back in for Hydra to re-read the client.
 

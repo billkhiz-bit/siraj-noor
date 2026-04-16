@@ -126,7 +126,36 @@ export async function completeLogin(
   }
 }
 
+// Single-flight gate + short-TTL result cache for refresh_token grants.
+// Hydra revokes the previous access token atomically on every refresh,
+// so two parallel refreshes from sibling API calls in the same tick
+// would rotate TWICE — the first caller ends up holding a revoked
+// token. The gate collapses bursts: while one refresh is in flight,
+// every other caller awaits the same promise. After it settles, the
+// result is served from cache for a brief window to absorb late
+// arrivals (e.g. a 403-retry path that kicks off ~1s after another
+// caller's refresh just completed).
+let inflightRefresh: Promise<StoredTokens | null> | null = null;
+let cachedRefreshResult: StoredTokens | null = null;
+let cachedRefreshUntil = 0;
+const REFRESH_CACHE_TTL_MS = 5_000;
+
 export async function refreshTokens(): Promise<StoredTokens | null> {
+  if (inflightRefresh) return inflightRefresh;
+  if (Date.now() < cachedRefreshUntil) return cachedRefreshResult;
+
+  inflightRefresh = doRefresh();
+  try {
+    const result = await inflightRefresh;
+    cachedRefreshResult = result;
+    cachedRefreshUntil = Date.now() + REFRESH_CACHE_TTL_MS;
+    return result;
+  } finally {
+    inflightRefresh = null;
+  }
+}
+
+async function doRefresh(): Promise<StoredTokens | null> {
   const current = loadTokens();
   if (!current?.refreshToken) return null;
 
