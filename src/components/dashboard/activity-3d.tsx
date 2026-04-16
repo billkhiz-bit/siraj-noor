@@ -191,7 +191,7 @@ function Scene({
         365 days
       </Text>
 
-      <Stars radius={60} depth={50} count={1500} factor={3} fade speed={0.3} />
+      <Stars radius={60} depth={50} count={700} factor={3} fade speed={0.3} />
 
       <OrbitControls
         enablePan={false}

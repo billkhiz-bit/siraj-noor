@@ -412,7 +412,7 @@ function Scene({ site, selectedAnnotation, onAnnotationClick }: {
       <pointLight position={[-5, 6, -5]} intensity={0.7} color="#22d3ee" distance={25} />
 
       <SiteModel site={site} active={true} />
-      <ParticleDust count={800} radius={8} colour={colour} />
+      <ParticleDust count={400} radius={8} colour={colour} />
 
       {/* Interactive annotation markers */}
       {(site.annotations || []).map((ann, i) => (
@@ -434,7 +434,7 @@ function Scene({ site, selectedAnnotation, onAnnotationClick }: {
         <mesh><ringGeometry args={[0.15, 0.17, 32]} /><meshBasicMaterial color="#334155" transparent opacity={0.15} side={THREE.DoubleSide} /></mesh>
       </group>
 
-      <Stars radius={60} depth={40} count={2000} factor={3} fade speed={0.2} />
+      <Stars radius={60} depth={40} count={1000} factor={3} fade speed={0.2} />
       <OrbitControls ref={controlsRef} enablePan minDistance={3} maxDistance={20} autoRotate={false} keyEvents={false} />
       <EffectComposer><Bloom luminanceThreshold={0.08} luminanceSmoothing={0.95} intensity={0.9} mipmapBlur /></EffectComposer>
     </>

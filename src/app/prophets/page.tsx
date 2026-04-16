@@ -1,5 +1,19 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { ProphetTimeline3D } from "@/components/dashboard/prophet-timeline-3d";
+import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
+
+const ProphetTimeline3D = dynamic(
+  () =>
+    import("@/components/dashboard/prophet-timeline-3d").then((m) => ({
+      default: m.ProphetTimeline3D,
+    })),
+  {
+    ssr: false,
+    loading: () => <Loading3DScene label="Loading Prophet Timeline 3D view" />,
+  }
+);
 
 export default function ProphetsPage() {
   return (

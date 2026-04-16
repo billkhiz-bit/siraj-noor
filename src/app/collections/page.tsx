@@ -182,7 +182,7 @@ export default function CollectionsPage() {
                         }
                       }}
                       aria-label={`Delete ${collection.name}`}
-                      className="text-xs text-muted-foreground/60 transition-colors hover:text-rose-400"
+                      className="inline-flex h-11 items-center rounded-md px-2 text-xs text-muted-foreground transition-colors hover:text-rose-400 md:h-8"
                     >
                       Delete
                     </button>

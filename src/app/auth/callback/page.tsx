@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { completeLogin } from "@/lib/auth/qf-oauth";
+import { completeLogin, beginLogin } from "@/lib/auth/qf-oauth";
 import { useAuth } from "@/lib/auth/auth-context";
 
 type Status = "pending" | "success" | "error";
@@ -30,18 +30,10 @@ export default function AuthCallbackPage() {
     }
 
     async function run() {
-      console.log("[auth/callback] run() started");
       try {
         const params = new URLSearchParams(window.location.search);
-        console.log("[auth/callback] params parsed", {
-          hasCode: params.has("code"),
-          hasState: params.has("state"),
-          hasError: params.has("error"),
-        });
-
         const error = params.get("error");
         if (error) {
-          console.log("[auth/callback] error param present:", error);
           update({
             status: "error",
             message:
@@ -54,7 +46,6 @@ export default function AuthCallbackPage() {
         const code = params.get("code");
         const stateParam = params.get("state");
         if (!code || !stateParam) {
-          console.log("[auth/callback] missing code or state");
           update({
             status: "error",
             message: "Missing authorisation code in callback URL.",
@@ -62,20 +53,22 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        console.log("[auth/callback] calling completeLogin");
         const { returnTo } = await completeLogin(code, stateParam);
-        console.log("[auth/callback] completeLogin resolved", { returnTo });
         if (cancelled) return;
         refresh();
         update({ status: "success", message: "Signed in — redirecting…" });
+        // Defence-in-depth on returnTo: startsWith("/") blocks external
+        // URLs; !startsWith("//") blocks protocol-relative bypasses;
+        // the whitespace/control-char check blocks /\tevil, /\u0000…
+        // tricks that some routers normalise.
         const isSafeReturnTo =
           typeof returnTo === "string" &&
           returnTo.startsWith("/") &&
-          !returnTo.startsWith("//");
+          !returnTo.startsWith("//") &&
+          !/[\s\x00-\x1f]/.test(returnTo);
         const target = isSafeReturnTo ? returnTo : "/";
         setTimeout(() => router.replace(target), 400);
       } catch (err) {
-        console.error("[auth/callback] run() caught:", err);
         update({
           status: "error",
           message: err instanceof Error ? err.message : String(err),
@@ -120,12 +113,21 @@ export default function AuthCallbackPage() {
               Sign-in failed
             </div>
             <div className="mb-4 text-muted-foreground">{message}</div>
-            <Link
-              href="/"
-              className="inline-block rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
-            >
-              Return home
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => void beginLogin("/")}
+                className="inline-block rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-black hover:bg-amber-400"
+              >
+                Try signing in again
+              </button>
+              <Link
+                href="/"
+                className="inline-block rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
+              >
+                Return home
+              </Link>
+            </div>
           </>
         )}
       </div>

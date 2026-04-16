@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { Activity3D } from "@/components/dashboard/activity-3d";
+import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useReadingProgress } from "@/lib/auth/reading-progress-context";
 import {
@@ -10,6 +11,17 @@ import {
   MOCK_STREAK,
   MOCK_READ_SURAHS,
 } from "@/lib/data/mock-personal-data";
+
+const Activity3D = dynamic(
+  () =>
+    import("@/components/dashboard/activity-3d").then((m) => ({
+      default: m.Activity3D,
+    })),
+  {
+    ssr: false,
+    loading: () => <Loading3DScene label="Loading Activity 3D heatmap" />,
+  }
+);
 
 type DisplayMode = "loading" | "preview-signed-out" | "preview-api-down" | "live";
 
@@ -104,10 +116,12 @@ export default function ActivityPage() {
                   Longest streak
                 </p>
                 <p className="mt-1 font-mono text-3xl font-bold text-foreground">
-                  {displayStreak.longest}
+                  {displayStreak.longest > 0 ? displayStreak.longest : "—"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  day{displayStreak.longest === 1 ? "" : "s"}
+                  {displayStreak.longest > 0
+                    ? `day${displayStreak.longest === 1 ? "" : "s"}`
+                    : "not yet available"}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-card p-4">

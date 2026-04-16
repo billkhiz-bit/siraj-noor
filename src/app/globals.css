@@ -127,6 +127,20 @@
   html {
     @apply font-sans;
   }
+
+  /*
+   * Visible keyboard focus on the dark theme. The default browser ring
+   * (--ring is mid-grey) disappears on #030308 backgrounds, leaving
+   * keyboard users unable to see where focus is. Use the amber accent
+   * instead so focus is visible on every interactive element without
+   * the component-by-component focus-visible: classes having to repeat
+   * the colour.
+   */
+  *:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 }
 
 @keyframes twinkle {

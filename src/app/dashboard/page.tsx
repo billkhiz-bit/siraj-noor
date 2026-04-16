@@ -1,8 +1,22 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { Surah3DChart } from "@/components/dashboard/surah-3d-chart";
 import { TodayPanel } from "@/components/auth/today-panel";
+import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { totalAyat, meccanCount, medinanCount, surahs } from "@/lib/data/surahs";
+
+const Surah3DChart = dynamic(
+  () =>
+    import("@/components/dashboard/surah-3d-chart").then((m) => ({
+      default: m.Surah3DChart,
+    })),
+  {
+    ssr: false,
+    loading: () => <Loading3DScene label="Loading Surah Structure 3D ring" />,
+  }
+);
 
 export default function DashboardPage() {
   const longestSurah = surahs.reduce((a, b) =>

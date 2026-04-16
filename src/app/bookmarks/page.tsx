@@ -143,7 +143,7 @@ export default function BookmarksPage() {
                       {parsed && (
                         <Link
                           href={`/surah/${parsed.chapter}/#verse-${bookmark.verse_key}`}
-                          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-amber-500/40 hover:text-amber-400"
+                          className="inline-flex h-11 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-amber-500/40 hover:text-amber-400 md:h-8"
                         >
                           Open
                         </Link>
@@ -152,7 +152,7 @@ export default function BookmarksPage() {
                         <button
                           type="button"
                           onClick={() => toggle(bookmark.verse_key)}
-                          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-rose-500/40 hover:text-rose-400"
+                          className="inline-flex h-11 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-rose-500/40 hover:text-rose-400 md:h-8"
                         >
                           Remove
                         </button>

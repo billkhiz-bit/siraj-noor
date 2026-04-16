@@ -16,7 +16,7 @@ A 3D Qur'an and Hadith companion with personal bookmarks, collections, streaks, 
 
 Siraj Noor turns the Qur'an and Hadith into explorable 3D data visualisations and layers a personal companion experience on top. Ten interactive views — Surah Structure ring, Word Frequency sphere, Isnad chain network, Prophet timeline, Hadith tower, Revelation map, Islamic journey routes, 99 Names of Allah, Sacred Sites, and a new Activity heatmap — make the structure of Islamic scripture tangible and navigable.
 
-Every personal data touchpoint is backed by the Quran Foundation User API. Sign in with Quran.com via OAuth 2.0 with PKCE, and the app reads and writes to your real account: bookmarks on any ayah from any view, themed collections of saved verses, a daily reading streak that lights up surahs you've visited on the 3D ring, and reflection posts to the Quran Foundation feed. No local storage, no fake data — every bookmark, every session, every streak day travels with you across devices via QF's infrastructure.
+Every personal data touchpoint is backed by the Quran Foundation User API. Sign in with Quran.com via OAuth 2.0 with PKCE, and the app reads and writes to your real account: bookmarks on any ayah from any view, themed collections of saved verses, a daily reading streak that lights up surahs you've visited on the 3D ring, and full reading-session history rendered as a 3D year-in-review heatmap. No local storage, no fake data — every bookmark, every session, every streak day travels with you across devices via QF's infrastructure.
 
 The 10th view, Activity, is the differentiator. A full-year 7×52 3D heatmap renders one cell per day; bar height and amber intensity represent reading session count, pulled live from the `/reading-sessions` endpoint. It turns the intangible habit of daily Qur'an into a three-dimensional artefact the user can inspect.
 
@@ -47,12 +47,12 @@ Siraj Noor is not a replacement for reading the mushaf or studying hadith from t
 
 **What You Built During the Hackathon**
 
-The entire Siraj Noor fork was built from scratch during the hackathon. It forks the original Siraj (3D Qur'an viewer from Ramadan Hacks 2026, content-API only) and adds the full Quran Foundation User API integration layer: OAuth 2.0 PKCE sign-in flow, Cloudflare Pages Function proxy for confidential client token exchange, concurrency-safe token refresh with single-flight de-duplication, bookmark create/list/delete, collection create/list/delete, reading session tracking, daily streak, ayah reflection posts, and the new Activity 3D heatmap page.
+The entire Siraj Noor fork was built from scratch during the hackathon. It forks the original Siraj (3D Qur'an viewer from Ramadan Hacks 2026, content-API only) and adds the full Quran Foundation User API integration layer: OAuth 2.0 PKCE sign-in flow, Cloudflare Pages Function proxy for confidential client token exchange, concurrency-safe token refresh with single-flight de-duplication, bookmark create/list/delete, collection create/list/delete, reading session tracking with auto-logging on surah view, daily streak via `/streaks/current-streak-days` with timezone-aware day boundaries, and the new Activity 3D heatmap page.
 
 The non-auth visualisations (Surah Structure, Word Frequency, Isnad Network, Prophet Timeline, Hadith Explorer, Revelation Map, Islamic Journeys, 99 Names, Sacred Sites) are preserved from the Ramadan Hacks base. Each now integrates with the bookmarking flow — click any ayah in any surah detail page to save it to your QF account.
 
 **Content API integration**: verse text, translations (Sahih International), transliteration, chapter metadata via `v4/*` endpoints.
-**User API integration**: `bookmark`, `collection`, `reading_session`, `streak`, `post` scopes via `/auth/v1/*` endpoints.
+**User API integration**: `bookmark`, `collection`, `reading_session`, `streak` scopes via `/auth/v1/*` endpoints.
 Both eligibility gates cleared.
 
 **Tech Stack**
@@ -72,7 +72,7 @@ npm run dev
 
 Requires a Quran Foundation OAuth client with the following configuration:
 - Redirect URI: `http://localhost:3000/auth/callback/`
-- Scopes: `openid offline_access user bookmark collection reading_session goal streak post`
+- Scopes requested at sign-in: `openid offline_access user bookmark collection reading_session goal streak post` (only `bookmark`, `collection`, `reading_session`, `streak`, plus the core `openid`/`offline_access`/`user` are currently exercised by the UI — `goal` and `post` scopes are reserved for future features)
 - Token endpoint auth: `client_secret_basic` (Cloudflare Pages Function proxies the token exchange to keep the secret server-side)
 
 **Contracts Deployed**: N/A — this is not a Web3 submission.

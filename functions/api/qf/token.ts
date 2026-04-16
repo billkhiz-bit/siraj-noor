@@ -39,6 +39,22 @@ interface TokenRequestBody {
 const DEFAULT_TOKEN_ENDPOINT =
   "https://prelive-oauth2.quran.foundation/oauth2/token";
 
+// Allowlist of origins permitted to use this proxy. Without this check the
+// Pages Function is effectively an open OAuth relay — any site on the
+// internet could POST a stolen PKCE code and have the confidential client
+// secret attached for them. Matched byte-for-byte against the request
+// Origin; requests with no Origin header are rejected.
+const ALLOWED_ORIGINS = new Set([
+  "https://siraj-noor.pages.dev",
+  "http://localhost:3000",
+  "http://localhost:3001",
+]);
+
+// Cap request size so an attacker can't tie up a Worker invocation by
+// streaming a huge body. Real PKCE token-exchange bodies are well under
+// 1 KB (code_verifier is max 128 chars per RFC 7636).
+const MAX_BODY_BYTES = 4096;
+
 function jsonError(
   status: number,
   error: string,
@@ -61,6 +77,24 @@ export const onRequestPost = async ({
   request,
   env,
 }: EventContext): Promise<Response> => {
+  const origin = request.headers.get("origin");
+  if (!origin || !ALLOWED_ORIGINS.has(origin)) {
+    return jsonError(
+      403,
+      "forbidden_origin",
+      "This proxy only accepts requests from the registered Siraj Noor origin."
+    );
+  }
+
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (contentLength > MAX_BODY_BYTES) {
+    return jsonError(
+      413,
+      "payload_too_large",
+      `Request body exceeds ${MAX_BODY_BYTES} bytes.`
+    );
+  }
+
   if (!env.QF_CLIENT_ID || !env.QF_CLIENT_SECRET) {
     return jsonError(
       500,

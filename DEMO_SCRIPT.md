@@ -47,22 +47,22 @@ One thing the script does *not* make time for in-camera but worth having ready a
 
 ---
 
-## Scene 3 · Bookmark + reflect on an ayah [0:30 → 0:55]
+## Scene 3 · Bookmark an ayah [0:30 → 0:55]
 
 **Show**
 - Click a surah bar in the ring → `/surah/2` opens
 - Scroll to Ayat al-Kursi (2:255)
-- Click bookmark star — fills amber (optimistic)
-- Click reflection button → composer dialog → type one short line → submit
-- Toast confirms
+- Click bookmark star — fills amber (optimistic UI)
+- Cut to DevTools Network tab briefly: `POST /auth/v1/bookmarks` → 200 with the canonical `{key, verseNumber, type:"ayah", mushaf:4}` body
+- Navigate to `/bookmarks` — the saved verse is already there
 
 **Beats to hit**
-- Bookmark or reflect on any ayah from any view
-- Optimistic UI, but backed by `bookmark.create` scope
-- Reflections post to Quran Foundation `/posts` endpoint — travels with the account
+- Bookmark any ayah from any of the ten views
+- Optimistic UI locally, persisted server-side via the `bookmark` scope on the Quran Foundation account
+- Same account, same state, across every device the user signs into
 
 **Caption**
-`User API: bookmark.create · post.create`
+`User API: POST /auth/v1/bookmarks · mushafId=4 (Hafs)`
 
 ---
 

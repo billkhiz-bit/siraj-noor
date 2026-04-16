@@ -1,5 +1,19 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { WordCloud3D } from "@/components/dashboard/word-cloud-3d";
+import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
+
+const WordCloud3D = dynamic(
+  () =>
+    import("@/components/dashboard/word-cloud-3d").then((m) => ({
+      default: m.WordCloud3D,
+    })),
+  {
+    ssr: false,
+    loading: () => <Loading3DScene label="Loading Word Frequency 3D sphere" />,
+  }
+);
 
 export default function WordsPage() {
   return (

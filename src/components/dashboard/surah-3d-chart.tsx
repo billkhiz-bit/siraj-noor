@@ -361,7 +361,7 @@ function Scene({
         />
       ))}
 
-      <Stars radius={60} depth={50} count={2000} factor={4} fade speed={0.4} />
+      <Stars radius={60} depth={50} count={1200} factor={4} fade speed={0.4} />
 
       <OrbitControls
         ref={orbitRef}

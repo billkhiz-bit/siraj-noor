@@ -1,5 +1,19 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { IsnadNetwork3D } from "@/components/dashboard/isnad-network-3d";
+import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
+
+const IsnadNetwork3D = dynamic(
+  () =>
+    import("@/components/dashboard/isnad-network-3d").then((m) => ({
+      default: m.IsnadNetwork3D,
+    })),
+  {
+    ssr: false,
+    loading: () => <Loading3DScene label="Loading Isnad Network 3D graph" />,
+  }
+);
 
 export default function IsnadPage() {
   return (

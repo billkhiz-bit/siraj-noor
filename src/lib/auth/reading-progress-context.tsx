@@ -28,7 +28,11 @@ interface ReadingProgressContextValue {
   readSurahs: Set<number>;
   streak: StreakInfo;
   isRead: (chapterId: number) => boolean;
-  recordRead: (chapterId: number, verseKey?: string) => Promise<void>;
+  // Returns true if the session was successfully logged, false on
+  // failure. Callers use the boolean to decide whether to cache the
+  // chapterId so they don't retry in the same mount (e.g.
+  // ReadingTracker needs to retry after a transient 401).
+  recordRead: (chapterId: number, verseKey?: string) => Promise<boolean>;
   reload: () => Promise<void>;
 }
 
@@ -114,8 +118,8 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
   );
 
   const recordRead = useCallback(
-    async (chapterId: number, verseKey?: string) => {
-      if (!isAuthenticated) return;
+    async (chapterId: number, verseKey?: string): Promise<boolean> => {
+      if (!isAuthenticated) return false;
 
       const optimisticId = `optimistic-${chapterId}-${Date.now()}`;
       const optimistic: ReadingSession = {
@@ -131,10 +135,12 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
         setSessions((current) =>
           current.map((s) => (s.id === optimisticId ? created : s))
         );
+        return true;
       } catch {
         // Remove only this optimistic entry on failure.
         setSessions((current) => current.filter((s) => s.id !== optimisticId));
         setError("Couldn't log this reading session");
+        return false;
       }
     },
     [isAuthenticated]

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { VerseVisualisation } from "@/components/dashboard/verse-visualisation";
+import { VerseVisualisation } from "@/components/dashboard/verse-visualisation-dynamic";
 import { BookmarkButton } from "@/components/auth/bookmark-button";
-import { ReflectionButton } from "@/components/auth/reflection-button";
 import { ReadingTracker } from "@/components/auth/reading-tracker";
 import { Badge } from "@/components/ui/badge";
 import { surahs } from "@/lib/data/surahs";
@@ -75,7 +74,7 @@ export default async function SurahDetailPage({
               {prevSurah && (
                 <Link
                   href={`/surah/${prevSurah.number}`}
-                  className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                  className="inline-flex h-11 items-center rounded-md border border-border px-3 text-muted-foreground hover:text-foreground transition-colors md:h-9"
                 >
                   &larr; {prevSurah.nameEnglish}
                 </Link>
@@ -83,7 +82,7 @@ export default async function SurahDetailPage({
               {nextSurah && (
                 <Link
                   href={`/surah/${nextSurah.number}`}
-                  className="rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                  className="inline-flex h-11 items-center rounded-md border border-border px-3 text-muted-foreground hover:text-foreground transition-colors md:h-9"
                 >
                   {nextSurah.nameEnglish} &rarr;
                 </Link>
@@ -96,7 +95,7 @@ export default async function SurahDetailPage({
             <p className="mb-6 text-sm text-muted-foreground leading-relaxed">
               {chapterInfo.short_text}
               {chapterInfo.source && (
-                <span className="ml-1 text-xs text-muted-foreground/60">
+                <span className="ml-1 text-xs text-muted-foreground">
                   ({chapterInfo.source})
                 </span>
               )}
@@ -141,14 +140,13 @@ export default async function SurahDetailPage({
                         </p>
                       )}
                       {verse.transliteration && (
-                        <p className="font-mono text-xs italic leading-relaxed text-muted-foreground/60">
+                        <p className="font-mono text-xs italic leading-relaxed text-muted-foreground">
                           {verse.transliteration}
                         </p>
                       )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <BookmarkButton verseKey={verse.verse_key} />
-                      <ReflectionButton verseKey={verse.verse_key} />
                     </div>
                   </div>
                 </div>
@@ -158,7 +156,7 @@ export default async function SurahDetailPage({
 
           {/* Source attribution */}
           <div className="mt-8 border-t border-border pt-4">
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-muted-foreground">
               Arabic text: Uthmani script via Qur&apos;an.com API v4.
               Translation: Sahih International.
               Revelation order: Egyptian Standard (Al-Azhar).

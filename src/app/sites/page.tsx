@@ -1,5 +1,19 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { SacredSites3D } from "@/components/dashboard/sacred-sites-3d";
+import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
+
+const SacredSites3D = dynamic(
+  () =>
+    import("@/components/dashboard/sacred-sites-3d").then((m) => ({
+      default: m.SacredSites3D,
+    })),
+  {
+    ssr: false,
+    loading: () => <Loading3DScene label="Loading Sacred Sites 3D models" />,
+  }
+);
 
 export default function SitesPage() {
   return (

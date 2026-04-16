@@ -1,5 +1,19 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { RevelationMap } from "@/components/dashboard/revelation-map";
+import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
+
+const RevelationMap = dynamic(
+  () =>
+    import("@/components/dashboard/revelation-map").then((m) => ({
+      default: m.RevelationMap,
+    })),
+  {
+    ssr: false,
+    loading: () => <Loading3DScene label="Loading Revelation map" />,
+  }
+);
 
 export default function MapPage() {
   return (

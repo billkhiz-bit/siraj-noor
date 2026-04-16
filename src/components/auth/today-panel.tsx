@@ -17,14 +17,16 @@ export function TodayPanel() {
   const { streak: liveStreak, readSurahs: liveReadSurahs, error } =
     useReadingProgress();
 
-  // Mirror the pattern on /activity, /bookmarks, /collections: if the user
-  // is signed in but the User API is refusing requests, show sample stats
-  // rather than zeros that look broken. The banner on the activity page
-  // makes the preview state explicit; here we keep it silent because the
-  // Today Panel is a peripheral widget, not the main view.
-  const showMockStats = !isAuthenticated || Boolean(error);
-  const streak = showMockStats ? MOCK_STREAK : liveStreak;
-  const readSurahs = showMockStats ? MOCK_READ_SURAHS : liveReadSurahs;
+  // Signed-out visitors see a preview with mock stats so the landing
+  // page looks alive. Signed-in-but-errored users now see their real
+  // (possibly stale) stats plus a visible warning — previously we
+  // silently substituted mock data here, which meant a user whose
+  // token had quietly expired saw a fake streak and wouldn't know
+  // anything was wrong.
+  const showPreview = !isAuthenticated;
+  const streak = showPreview ? MOCK_STREAK : liveStreak;
+  const readSurahs = showPreview ? MOCK_READ_SURAHS : liveReadSurahs;
+  const apiErrored = isAuthenticated && Boolean(error);
 
   const daily = useMemo(() => pickDailyAyah(), []);
   const surah = useMemo(
@@ -168,6 +170,14 @@ export function TodayPanel() {
               </span>{" "}
               of 114 surahs visited
             </div>
+            {apiErrored && (
+              <p
+                role="status"
+                className="mt-3 text-[10px] uppercase tracking-wider text-amber-500/70"
+              >
+                Sync paused — last known state shown
+              </p>
+            )}
           </>
         )}
       </div>

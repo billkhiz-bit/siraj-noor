@@ -101,7 +101,7 @@ export function Sidebar() {
           className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
           aria-label="Dashboard navigation"
         >
-          <div className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          <div className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Explore
           </div>
           {exploreViews.map((view) => {
@@ -125,7 +125,7 @@ export function Sidebar() {
             );
           })}
 
-          <div className="mb-1 mt-4 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          <div className="mb-1 mt-4 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Personal
           </div>
           {personalViews.map((view) => {

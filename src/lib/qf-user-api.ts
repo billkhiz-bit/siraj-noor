@@ -68,7 +68,20 @@ async function qfFetch<T>(
     );
   }
 
-  return JSON.parse(bodyText) as T;
+  // QF occasionally returns HTML error pages on gateway misbehaviour
+  // (Cloudflare 5xx, maintenance windows). Parsing a non-JSON body
+  // with a bare JSON.parse would throw SyntaxError that callers
+  // can't distinguish from a genuine API error. Wrap and map to a
+  // 502 so providers surface "couldn't load" instead of bubbling an
+  // unhandled rejection.
+  try {
+    return JSON.parse(bodyText) as T;
+  } catch {
+    throw new QfApiError(
+      `Non-JSON response from ${path}: ${bodyText.slice(0, 120)}`,
+      502
+    );
+  }
 }
 
 // ─── Internal app-facing shapes ──────────────────────────────────────
@@ -291,11 +304,11 @@ export const qfApi = {
     longest_streak: number;
   }> => {
     // /streaks/current-streak-days returns a scalar {days}. The list
-    // endpoint /streaks returns paginated history, which isn't what
-    // the activity page wants. "Longest" isn't exposed by QF's API
-    // yet — mirror the current value so the UI renders something
-    // reasonable instead of permanently 0. Revisit if QF ships a
-    // longest-streak endpoint.
+    // endpoint /streaks returns paginated history, which isn't what the
+    // activity page wants. QF's User API v1 doesn't currently expose a
+    // longest-streak scalar, so we return 0 as a sentinel — the UI
+    // renders "—" for longest when the value is 0 rather than showing
+    // an equal mirror of the current streak (which would be misleading).
     //
     // x-timezone lets the server compute "today" against the user's
     // local day boundary rather than UTC — a streak of 3 at 2300 Pacific
@@ -312,13 +325,16 @@ export const qfApi = {
     );
     return {
       current_streak: env.data.days,
-      longest_streak: env.data.days,
+      longest_streak: 0,
     };
   },
 
-  createReflection: (verseKey: string, text: string) =>
-    qfFetch<{ id: string }>("/posts", {
-      method: "POST",
-      body: JSON.stringify({ verse_key: verseKey, body: text }),
-    }),
+  // createReflection is intentionally omitted. QF's POST /posts is a
+  // community-room feature, not a private notes endpoint: the schema
+  // requires roomId, postAsAuthorId, publishedAt, references array,
+  // mentions array, and a room-post status — see CreatePostDto in
+  // api-docs.quran.foundation. Our original UX ("private note on an
+  // ayah, visible only to you") doesn't map onto community posts, so
+  // we removed the button rather than ship a surface that 4xxs on
+  // every save. Revisit if QF exposes a private-note endpoint.
 };

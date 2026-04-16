@@ -4,13 +4,13 @@
 
 > "We sent you as a shining lamp" (Qur'an 33:46)
 
-**Live**: [siraj-noor.pages.dev](https://siraj-noor.pages.dev) *(pending first deploy)*
+**Live**: [siraj-noor.pages.dev](https://siraj-noor.pages.dev)
 
 Built for the [Quran Foundation Hackathon 2026](https://hackathon.provisionlaunch.com) by Provision Launch × Quran Foundation. Fork of the original [Siraj](https://github.com/billkhiz-bit/siraj), which was built for Ramadan Hacks 2026.
 
 ## What is Siraj Noor?
 
-Siraj Noor illuminates the structure, patterns, and geography of the Qur'an and Hadith through interactive 3D data visualisation — and now goes further by layering a personal companion experience on top. Bookmark ayahs from any 3D view, save them into collections, track your reading streak, reflect on verses, and watch your reading progress light up the Surah Ring. All personal data is stored on your Quran Foundation account (via the User APIs) so it travels with you across devices.
+Siraj Noor illuminates the structure, patterns, and geography of the Qur'an and Hadith through interactive 3D data visualisation — and now goes further by layering a personal companion experience on top. Bookmark ayahs from any 3D view, save them into collections, track your reading streak, and watch your reading progress light up the Surah Ring. All personal data is stored on your Quran Foundation account (via the User APIs) so it travels with you across devices.
 
 Most Islamic apps focus on reading and listening. Siraj Noor lets you *see* the data **and** build a lasting relationship with what you've explored.
 
@@ -35,7 +35,7 @@ Most Islamic apps focus on reading and listening. Siraj Noor lets you *see* the 
 
 | Page | Description |
 |------|-------------|
-| **Surah Detail** | Click any surah from the Surah Structure ring for Arabic text, English translation (Sahih International), transliteration, and a 3D verse structure chart. Click-to-pin any ayah, bookmark any verse, reflect on any verse. |
+| **Surah Detail** | Click any surah from the Surah Structure ring for Arabic text, English translation (Sahih International), transliteration, and a 3D verse structure chart. Click-to-pin any ayah, bookmark any verse. |
 | **Today Panel** | Dashboard header showing a date-deterministic Ayah of the Day, your current streak, and how much of the mushaf you've visited this year. Powered by the `reading_session` and `streak` scopes. |
 | **Bookmarks** | Dedicated list view of every ayah you've saved. Click a bookmark to jump back to its surah. Stored on your Quran.com account via the `bookmark` scope. |
 | **Collections** | Themed groupings of bookmarks rendered as a CSS-perspective 3D shelf. Name a collection, drop saved ayahs into it. Synced via the `collection` scope. |
@@ -68,16 +68,19 @@ All data is sourced from authoritative references:
 - **Three.js** via React Three Fiber + Drei + Post-processing
 - **MapLibre GL** + react-map-gl (CARTO Dark Matter no-labels tiles)
 - **shadcn/ui** + Tailwind CSS v4 + Geist fonts
-- **Cloudflare Pages** (free tier)
+- **Quran Foundation User APIs v1** (OAuth 2.0 PKCE, bookmarks, collections, reading sessions, streaks) + Content API v4 (verse text, translations, transliteration)
+- **Cloudflare Pages** (static hosting) + **Cloudflare Pages Functions** (OAuth token proxy for confidential client secret)
 
 ## Running Locally
 
 ```bash
 npm install
+cp .env.local.example .env.local
+# Fill in NEXT_PUBLIC_QF_CLIENT_ID from your QF developer account
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Personal features require a Quran Foundation OAuth client with `http://localhost:3000/auth/callback/` registered as a redirect URI.
 
 ## Keyboard Shortcuts
 
@@ -91,4 +94,4 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Licence
 
-All rights reserved.
+MIT — see the submission notes or LICENSE in the repository root.

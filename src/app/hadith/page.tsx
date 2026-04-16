@@ -1,5 +1,19 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { HadithExplorer3D } from "@/components/dashboard/hadith-explorer-3d";
+import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
+
+const HadithExplorer3D = dynamic(
+  () =>
+    import("@/components/dashboard/hadith-explorer-3d").then((m) => ({
+      default: m.HadithExplorer3D,
+    })),
+  {
+    ssr: false,
+    loading: () => <Loading3DScene label="Loading Hadith Explorer 3D towers" />,
+  }
+);
 
 export default function HadithPage() {
   return (

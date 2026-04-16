@@ -464,7 +464,7 @@ function Scene({
         />
       )}
 
-      <Stars radius={80} depth={60} count={3000} factor={3} fade speed={0.2} />
+      <Stars radius={80} depth={60} count={1500} factor={3} fade speed={0.2} />
 
       <OrbitControls
         enablePan={false}

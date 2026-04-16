@@ -11,13 +11,23 @@ interface ReadingTrackerProps {
 export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
   const { isAuthenticated, isReady } = useAuth();
   const { recordRead } = useReadingProgress();
-  const sentRef = useRef<number | null>(null);
+
+  // Track which chapters have been successfully recorded in this mount.
+  // A plain ref (previously) set the id synchronously before the POST
+  // resolved — a failed POST would still block retry. Now we set the
+  // id BEFORE the request to prevent double-fires across re-renders,
+  // then roll it back on failure so a subsequent effect tick or a
+  // remount can legitimately retry.
+  const claimedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     if (!isReady || !isAuthenticated) return;
-    if (sentRef.current === chapterId) return;
-    sentRef.current = chapterId;
-    void recordRead(chapterId);
+    if (claimedRef.current.has(chapterId)) return;
+
+    claimedRef.current.add(chapterId);
+    void recordRead(chapterId).then((ok) => {
+      if (!ok) claimedRef.current.delete(chapterId);
+    });
   }, [chapterId, isAuthenticated, isReady, recordRead]);
 
   return null;

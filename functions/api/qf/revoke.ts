@@ -1,16 +1,21 @@
-// Cloudflare Pages Function — QF refresh token proxy
+// Cloudflare Pages Function — QF token revocation proxy
 //
-// Mirrors functions/api/qf/token.ts for the refresh_token grant. Same reason:
-// our client is confidential and we can't send client_secret from the
-// browser. This function holds the secret server-side and forwards refresh
-// requests to QF.
-
-// No PagesFunction import — see functions/api/qf/token.ts for rationale.
+// Hydra's /oauth2/revoke endpoint requires the same confidential
+// client authentication as /oauth2/token (client_secret_basic), so
+// revocation has to go through a proxy for the same reason as token
+// exchange and refresh. The endpoint is RFC 7009 — POST the token to
+// be revoked with the client's Basic auth header, server responds 200
+// whether the token was active or already revoked.
+//
+// This is called during logout *before* the browser redirects to
+// Hydra's session logout. Clearing the refresh_token server-side is
+// what actually ends the grant — without this, a compromised refresh
+// token could mint new access tokens long after the user signed out.
 
 interface Env {
   QF_CLIENT_ID: string;
   QF_CLIENT_SECRET: string;
-  QF_TOKEN_ENDPOINT?: string;
+  QF_REVOKE_ENDPOINT?: string;
 }
 
 interface EventContext {
@@ -18,16 +23,14 @@ interface EventContext {
   env: Env;
 }
 
-interface RefreshRequestBody {
-  refresh_token?: unknown;
+interface RevokeRequestBody {
+  token?: unknown;
+  token_type_hint?: unknown;
 }
 
-const DEFAULT_TOKEN_ENDPOINT =
-  "https://prelive-oauth2.quran.foundation/oauth2/token";
+const DEFAULT_REVOKE_ENDPOINT =
+  "https://prelive-oauth2.quran.foundation/oauth2/revoke";
 
-// Same Origin allowlist as token.ts. Refresh proxy is even more sensitive
-// than token exchange: an attacker with a stolen refresh_token plus an
-// open proxy can mint fresh access tokens indefinitely.
 const ALLOWED_ORIGINS = new Set([
   "https://siraj-noor.pages.dev",
   "http://localhost:3000",
@@ -84,32 +87,27 @@ export const onRequestPost = async ({
     );
   }
 
-  let payload: RefreshRequestBody;
+  let payload: RevokeRequestBody;
   try {
-    payload = (await request.json()) as RefreshRequestBody;
+    payload = (await request.json()) as RevokeRequestBody;
   } catch {
     return jsonError(400, "invalid_request", "Request body must be JSON.");
   }
 
-  if (!isNonEmptyString(payload.refresh_token)) {
-    return jsonError(
-      400,
-      "invalid_request",
-      "refresh_token is required."
-    );
+  if (!isNonEmptyString(payload.token)) {
+    return jsonError(400, "invalid_request", "token is required.");
   }
 
-  const form = new URLSearchParams({
-    grant_type: "refresh_token",
-    refresh_token: payload.refresh_token,
-  });
+  const form = new URLSearchParams({ token: payload.token });
+  if (isNonEmptyString(payload.token_type_hint)) {
+    form.set("token_type_hint", payload.token_type_hint);
+  }
 
   const basic = btoa(`${env.QF_CLIENT_ID}:${env.QF_CLIENT_SECRET}`);
-  const tokenEndpoint = env.QF_TOKEN_ENDPOINT ?? DEFAULT_TOKEN_ENDPOINT;
+  const revokeEndpoint = env.QF_REVOKE_ENDPOINT ?? DEFAULT_REVOKE_ENDPOINT;
 
-  let upstream: Response;
   try {
-    upstream = await fetch(tokenEndpoint, {
+    await fetch(revokeEndpoint, {
       method: "POST",
       headers: {
         "content-type": "application/x-www-form-urlencoded",
@@ -118,16 +116,16 @@ export const onRequestPost = async ({
       body: form.toString(),
     });
   } catch {
-    return jsonError(
-      502,
-      "upstream_unreachable",
-      "Could not reach the Quran Foundation token endpoint."
-    );
+    // Revocation failures are not user-actionable — log-and-forget.
+    // The local token clear in the browser has already happened; at
+    // worst the refresh_token remains live on QF's side until it
+    // expires naturally. Not ideal, but not a credential leak either.
   }
 
-  const body = await upstream.text();
-  return new Response(body, {
-    status: upstream.status,
+  // RFC 7009: always 200 on revoke — the caller can't distinguish
+  // "revoked" from "was already revoked" from "didn't exist" by design.
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
     headers: { "content-type": "application/json" },
   });
 };

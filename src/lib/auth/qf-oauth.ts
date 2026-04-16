@@ -1,5 +1,6 @@
 import {
   QF_CLIENT_ID,
+  QF_AUTH_HOST,
   QF_AUTHORIZE_URL,
   QF_TOKEN_URL,
   QF_REFRESH_URL,
@@ -29,6 +30,15 @@ interface TokenResponse {
   scope?: string;
 }
 
+interface IdTokenClaims {
+  iss?: string;
+  sub?: string;
+  aud?: string | string[];
+  exp?: number;
+  iat?: number;
+  nonce?: string;
+}
+
 function tokensFromResponse(resp: TokenResponse): StoredTokens {
   return {
     accessToken: resp.access_token,
@@ -37,6 +47,70 @@ function tokensFromResponse(resp: TokenResponse): StoredTokens {
     scope: resp.scope,
     expiresAt: Date.now() + resp.expires_in * 1000,
   };
+}
+
+// Decode the unverified payload of a JWT. We don't verify the signature
+// here — id_tokens come through a TLS-protected back channel from a
+// trusted IdP, and we only use the payload for OIDC spec-mandated claim
+// checks (aud, iss, exp, nonce). A full JWKS-based signature check would
+// require bundling a JWT lib and pulling the JWKS endpoint on every
+// login; not worth it for a browser-only flow where the token would
+// have to tamper with the TLS connection to reach us.
+function decodeIdTokenClaims(idToken: string): IdTokenClaims | null {
+  const parts = idToken.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "===".slice((b64.length + 3) % 4);
+    return JSON.parse(atob(padded)) as IdTokenClaims;
+  } catch {
+    return null;
+  }
+}
+
+function verifyIdTokenClaims(
+  idToken: string | undefined,
+  expectedNonce: string
+): void {
+  if (!idToken) return; // id_token is technically optional; only verify when present
+  const claims = decodeIdTokenClaims(idToken);
+  if (!claims) {
+    throw new Error("id_token could not be decoded — sign-in aborted.");
+  }
+
+  // Issuer must match the IdP host we authenticated against. Prevents an
+  // id_token minted by a different IdP from being accepted.
+  if (claims.iss !== QF_AUTH_HOST) {
+    throw new Error(
+      `id_token issuer mismatch (expected ${QF_AUTH_HOST}, got ${claims.iss}). Sign-in aborted.`
+    );
+  }
+
+  // Audience must include our client_id. Prevents a token minted for a
+  // different client from being accepted.
+  const aud = claims.aud;
+  const audOk =
+    typeof aud === "string"
+      ? aud === QF_CLIENT_ID
+      : Array.isArray(aud) && aud.includes(QF_CLIENT_ID);
+  if (!audOk) {
+    throw new Error("id_token audience mismatch — sign-in aborted.");
+  }
+
+  // Expiry must be in the future. 60s skew allows for small clock drift
+  // between our machine and the IdP.
+  if (typeof claims.exp !== "number" || Date.now() / 1000 > claims.exp + 60) {
+    throw new Error("id_token has expired — sign-in aborted.");
+  }
+
+  // Nonce must match the one we generated and stored in PKCE state. This
+  // is the OIDC-spec-mandated replay protection: without this check, a
+  // captured id_token from another session could bind here.
+  if (claims.nonce !== expectedNonce) {
+    throw new Error(
+      "id_token nonce mismatch — possible replay attack. Sign-in aborted."
+    );
+  }
 }
 
 export async function beginLogin(returnTo: string = "/"): Promise<void> {
@@ -118,6 +192,11 @@ export async function completeLogin(
     }
 
     const json: TokenResponse = await response.json();
+    // Verify id_token claims before storing. If verification fails we
+    // throw from here — the finally {} clause clears PKCE so the same
+    // auth code can't be re-exchanged. Tokens never reach storage on
+    // failure.
+    verifyIdTokenClaims(json.id_token, pkce.nonce);
     const tokens = tokensFromResponse(json);
     saveTokens(tokens);
     return { tokens, returnTo: pkce.returnTo };
@@ -139,6 +218,20 @@ let inflightRefresh: Promise<StoredTokens | null> | null = null;
 let cachedRefreshResult: StoredTokens | null = null;
 let cachedRefreshUntil = 0;
 const REFRESH_CACHE_TTL_MS = 5_000;
+
+// Cross-tab invalidation: if another tab changes the token state (e.g.
+// user signs in from a second tab while this tab has a cached `null`
+// refresh result from a rejected refresh), clear our cache so the next
+// API call re-reads localStorage rather than serving the stale null.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === "qf.tokens.v1") {
+      inflightRefresh = null;
+      cachedRefreshResult = null;
+      cachedRefreshUntil = 0;
+    }
+  });
+}
 
 export async function refreshTokens(): Promise<StoredTokens | null> {
   if (inflightRefresh) return inflightRefresh;
@@ -206,6 +299,30 @@ export function logout(): void {
   const current = loadTokens();
   clearTokens();
   clearPkce();
+
+  // Revoke the refresh token server-side via the Pages Function proxy
+  // (Hydra's /oauth2/revoke requires client_secret_basic, so we can't
+  // call it directly from the browser). Use sendBeacon rather than
+  // fetch so the POST survives the page unload that immediately
+  // follows — sendBeacon is designed for exactly this pattern and
+  // preserves the Content-Type from the Blob so our proxy's JSON
+  // parse still works. If sendBeacon isn't available (very old
+  // browsers) we fall through; Hydra's session logout still happens,
+  // the refresh token just stays live until it expires naturally.
+  if (current?.refreshToken && typeof navigator !== "undefined") {
+    const body = new Blob(
+      [
+        JSON.stringify({
+          token: current.refreshToken,
+          token_type_hint: "refresh_token",
+        }),
+      ],
+      { type: "application/json" }
+    );
+    if (typeof navigator.sendBeacon === "function") {
+      navigator.sendBeacon("/api/qf/revoke", body);
+    }
+  }
 
   const params = new URLSearchParams({
     post_logout_redirect_uri: getPostLogoutRedirectUri(),
