@@ -3,12 +3,15 @@
 **Target:** 2:30 (hard cap 3:00)
 **For:** Provision Launch × Quran Foundation Hackathon judges
 **Format:** Bullet guide — hit the beats, talk naturally over the visuals
+**Status (2026-04-16):** Auth end-to-end green on prelive; recording any time this week is safe.
 
 ---
 
 ## Why this structure
 
 Impact is worth 30 points, the largest judging category. The first 60 seconds must prove this is a **Quran Foundation User API** consumer, not a content-only Qur'an viewer — that's the eligibility differentiator. OAuth flow + amber ring overlay go up front for that reason. Everything else is supporting evidence; cut from the bottom if running long.
+
+One thing the script does *not* make time for in-camera but worth having ready as a narrator aside if a scene lands short: the refresh-token flow is hardened with a single-flight gate so sibling providers (BookmarksProvider, CollectionsProvider, ReadingProgressProvider) can't cascade-revoke each other's access tokens on the initial page mount. It's the kind of detail that shows judges the integration is production-shaped, not a weekend prototype.
 
 ---
 
@@ -35,12 +38,12 @@ Impact is worth 30 points, the largest judging category. The first 60 seconds mu
 - Return to dashboard — user menu now shows signed-in state
 
 **Beats to hit**
-- OAuth 2.0 PKCE — public client, no backend, no client secrets
-- Bookmarks, collections, reading sessions, reflections all live on your Quran Foundation account
+- OAuth 2.0 PKCE with a Cloudflare Pages Function token proxy — secret stays server-side, browser only ever holds the access + refresh tokens
+- Bookmarks, collections, reading sessions, reflections all live on your Quran Foundation account via the `/auth/v1/*` endpoints
 - "One tap, and everything personal follows me across devices"
 
 **Caption**
-`OAuth 2.0 PKCE · public client · no server`
+`OAuth 2.0 PKCE · Cloudflare Pages Function proxy · zero persistent server`
 
 ---
 
@@ -155,14 +158,23 @@ Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 
 ## Recording checklist
 
-- [ ] Sign in against the **prelive sandbox** before rolling (not prod)
-- [ ] Pre-seed ≥5 days of reading sessions so Activity 3D has visible data
-- [ ] Pre-seed 3–4 bookmarks across different surahs so the ring has multiple amber surahs
+**Before rolling**
+
+- [ ] Sign in against the **prelive sandbox** (production client scopes not yet approved as of 2026-04-16). Both hosts produce identical-looking UI; prelive is the safe recording target.
+- [ ] Pre-seed reading sessions: visit at least 5 surahs across 5 different days so the Activity heatmap shows variance. The ReadingTracker auto-fires on `/surah/[id]` mount once per chapter per session, so visiting five surahs in one sitting creates one dense cell; to get multi-day data, record over several days or use QF's API directly to backfill.
+- [ ] Pre-seed 3–4 bookmarks across different surahs (Fatihah 1:1, Baqarah 2:255, Nur 24:35, Rahman 55:13 makes a visually varied demo ring)
+- [ ] Create 1–2 collections so Scene 6's shelf has cards already present, and create one live on camera for the beat
 - [ ] Hide browser bookmarks bar + extension icons
-- [ ] Incognito window, dark mode forced off at OS level
+- [ ] Fresh incognito window with cookies from a prior signed-in session preserved (or sign in cleanly if you want the OAuth flow on camera — recommended for Scene 2)
+- [ ] Dark mode forced off at OS level (the app forces dark on its own; OS-level light mode prevents dev-tool panels from appearing dark in any system-chrome shots)
 - [ ] Screen capture at 1920×1080, 60 fps (OBS or equivalent)
 - [ ] VO recorded separately, aligned in editor — do **not** record with system audio pickup
 - [ ] Export H.264, check Provision Launch file size limit before final upload
+
+**During recording**
+
+- [ ] Open DevTools Network tab filtered by `apis-prelive` **just before** Scene 2 and let it record silently in the background; useful to cut a 2-second insert shot in Scene 4 or 5 showing a live `200 OK` on `/auth/v1/bookmarks?mushafId=4&first=20` as proof the integration is real, not mocked.
+- [ ] Between scenes: if the app state drifts (phantom bookmarks, stale streak), hard-refresh rather than stop-start — providers remount on hard refresh and pull fresh state from the API.
 
 ---
 
