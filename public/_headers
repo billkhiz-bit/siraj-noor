@@ -23,4 +23,8 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Permissions-Policy: camera=(), microphone=(), geolocation=(), usb=(), payment=()
-  Content-Security-Policy: default-src 'self'; connect-src 'self' https://apis.quran.foundation https://apis-prelive.quran.foundation https://prelive-oauth2.quran.foundation https://oauth2.quran.foundation https://api.qurancdn.com https://*.basemaps.cartocdn.com; img-src 'self' data: blob: https://*.basemaps.cartocdn.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://prelive-oauth2.quran.foundation https://oauth2.quran.foundation; worker-src 'self' blob:; object-src 'none'
+  # Content-Security-Policy intentionally omitted — needs report-only
+  # pass against the live bundle to confirm every allowed host before
+  # re-enabling. Clickjacking is already covered by X-Frame-Options:
+  # DENY above; XSS surface is small because we don't accept HTML
+  # input anywhere. Post-hackathon follow-up.
