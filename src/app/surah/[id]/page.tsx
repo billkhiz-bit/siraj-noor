@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { VerseVisualisation } from "@/components/dashboard/verse-visualisation-dynamic";
 import { ChapterAudioPlayer } from "@/components/dashboard/chapter-audio-player";
 import { VerseRow } from "@/components/dashboard/verse-row";
+import { VerseProgressIndicator } from "@/components/dashboard/verse-progress-indicator";
 import { ReadingTracker } from "@/components/auth/reading-tracker";
 import { Badge } from "@/components/ui/badge";
 import { surahs } from "@/lib/data/surahs";
@@ -124,6 +125,7 @@ export default async function SurahDetailPage({
           {/* Verse listing */}
           <div>
             <h2 className="mb-4 text-lg font-semibold">All Verses</h2>
+            <VerseProgressIndicator verses={verses} />
             <div className="space-y-4">
               {verses.map((verse) => (
                 <VerseRow

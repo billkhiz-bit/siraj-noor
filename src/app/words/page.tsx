@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
+import { RootExplorer } from "@/components/dashboard/root-explorer";
 
 const WordCloud3D = dynamic(
   () =>
@@ -32,6 +33,10 @@ export default function WordsPage() {
             </p>
           </div>
           <WordCloud3D />
+
+          <div className="mt-8">
+            <RootExplorer />
+          </div>
         </div>
       </main>
     </div>

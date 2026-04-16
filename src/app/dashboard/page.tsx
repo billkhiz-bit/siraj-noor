@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TodayPanel } from "@/components/auth/today-panel";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
+import { IntroSplash } from "@/components/dashboard/intro-splash";
+import { RevelationTimeline } from "@/components/dashboard/revelation-timeline";
 import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { totalAyat, meccanCount, medinanCount, surahs } from "@/lib/data/surahs";
@@ -26,6 +28,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-dvh overflow-hidden">
+      <IntroSplash />
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-4 pb-8 pt-16 md:px-6 md:py-8">
@@ -102,6 +105,8 @@ export default function DashboardPage() {
           </div>
 
           <Surah3DChart />
+
+          <RevelationTimeline />
         </div>
       </main>
     </div>

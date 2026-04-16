@@ -14,6 +14,7 @@ import {
 import { ShareVerseButton } from "@/components/dashboard/share-verse-button";
 import type { Verse } from "@/lib/quran-api";
 import type { Tafsir } from "@/lib/quran-api";
+import { getHadithForVerse } from "@/lib/data/hadith-by-verse";
 
 interface VerseRowProps {
   verse: Verse;
@@ -24,10 +25,12 @@ export function VerseRow({ verse, surahEnglish }: VerseRowProps) {
   const [tafsirOpen, setTafsirOpen] = useState(false);
   const [tafsir, setTafsir] = useState<Tafsir | null>(null);
   const [fetchAttempted, setFetchAttempted] = useState(false);
+  const hadiths = getHadithForVerse(verse.verse_key);
 
   return (
     <div
       id={`verse-${verse.verse_key}`}
+      data-verse-key={verse.verse_key}
       className="rounded-lg border border-border bg-card p-4"
     >
       <div className="flex items-start justify-between gap-4">
@@ -78,6 +81,45 @@ export function VerseRow({ verse, surahEnglish }: VerseRowProps) {
           tafsir={tafsir}
           loading={!fetchAttempted}
         />
+      )}
+      {hadiths.length > 0 && (
+        <aside className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.03] p-4">
+          <div className="mb-2 flex items-center gap-2 text-xs">
+            <span className="font-mono uppercase tracking-[0.2em] text-cyan-400/80">
+              Hadith on this ayah
+            </span>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground">
+              {hadiths.length} reference{hadiths.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <ul className="space-y-2.5">
+            {hadiths.map((h) => (
+              <li
+                key={h.reference}
+                className="rounded-md border border-border bg-card/40 p-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm leading-relaxed text-foreground/85">
+                    {h.summary}
+                  </p>
+                  <a
+                    href={h.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-8 shrink-0 items-center rounded-md border border-cyan-500/40 px-2 font-mono text-[11px] text-cyan-400 hover:bg-cyan-500/10"
+                    aria-label={`Open ${h.reference} on sunnah.com`}
+                  >
+                    {h.reference} ↗
+                  </a>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {h.collection}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </aside>
       )}
     </div>
   );
