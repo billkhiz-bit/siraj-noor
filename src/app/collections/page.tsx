@@ -18,14 +18,15 @@ export default function CollectionsPage() {
   const { isAuthenticated, isReady, login } = useAuth();
   const { collections, isLoading, error, create, remove } = useCollections();
   const [draftName, setDraftName] = useState("");
-  const [draftDescription, setDraftDescription] = useState("");
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
     if (!draftName.trim()) return;
-    await create(draftName, draftDescription || undefined);
+    // QF's /collections POST accepts only `name` — description is not
+    // part of the schema. Dropped the optional description input to
+    // avoid promising a field we can't persist.
+    await create(draftName);
     setDraftName("");
-    setDraftDescription("");
   }
 
   const mode: DisplayMode = !isReady
@@ -107,7 +108,7 @@ export default function CollectionsPage() {
             <h2 className="mb-3 text-sm font-semibold text-foreground">
               New collection
             </h2>
-            <div className="grid gap-3 md:grid-cols-[2fr_3fr_auto]">
+            <div className="grid gap-3 md:grid-cols-[1fr_auto]">
               <div>
                 <label htmlFor="collection-name" className="sr-only">
                   Collection name
@@ -120,19 +121,6 @@ export default function CollectionsPage() {
                   maxLength={80}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
                   required
-                />
-              </div>
-              <div>
-                <label htmlFor="collection-description" className="sr-only">
-                  Collection description
-                </label>
-                <input
-                  id="collection-description"
-                  value={draftDescription}
-                  onChange={(e) => setDraftDescription(e.target.value)}
-                  placeholder="Optional description"
-                  maxLength={200}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
                 />
               </div>
               <button
@@ -205,12 +193,14 @@ export default function CollectionsPage() {
                     {collection.description}
                   </p>
                 )}
-                <div className="border-t border-border/60 pt-3 text-xs text-muted-foreground">
-                  <span className="font-mono text-foreground">
-                    {collection.bookmarks_count ?? 0}
-                  </span>{" "}
-                  ayah{collection.bookmarks_count === 1 ? "" : "s"}
-                </div>
+                {typeof collection.bookmarks_count === "number" && (
+                  <div className="border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                    <span className="font-mono text-foreground">
+                      {collection.bookmarks_count}
+                    </span>{" "}
+                    ayah{collection.bookmarks_count === 1 ? "" : "s"}
+                  </div>
+                )}
               </article>
             ))}
           </div>

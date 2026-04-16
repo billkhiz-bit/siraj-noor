@@ -296,8 +296,19 @@ export const qfApi = {
     // yet — mirror the current value so the UI renders something
     // reasonable instead of permanently 0. Revisit if QF ships a
     // longest-streak endpoint.
+    //
+    // x-timezone lets the server compute "today" against the user's
+    // local day boundary rather than UTC — a streak of 3 at 2300 Pacific
+    // stays at 3 past midnight UTC instead of resetting. QF lists the
+    // header as optional but recommended; we default to the browser's
+    // IANA zone and fall back to UTC on SSR or exotic runtimes.
+    const tz =
+      typeof Intl !== "undefined"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+        : "UTC";
     const env = await qfFetch<QfSingleEnvelope<{ days: number }>>(
-      "/streaks/current-streak-days?type=QURAN"
+      "/streaks/current-streak-days?type=QURAN",
+      { headers: { "x-timezone": tz } }
     );
     return {
       current_streak: env.data.days,
