@@ -389,9 +389,9 @@ node -e "const s=require('./qf-api.json'); console.log(JSON.stringify(s.paths, n
 
 Four days of email-based debugging vs. 30 seconds of reading the machine-readable spec. Worth banking as a reflex: **when an API returns unexpected 4xx and exposes an OpenAPI URL, read the spec before asking the vendor**. The `/llms.txt` + `/openAPI/*.json` combination is the canonical AI-friendly doc surface on this kind of platform.
 
-### Basit email — not sent
+### Basit email — sent 2026-04-16
 
-The closure email will briefly acknowledge the root cause was on our side (closure-captured token in the probe page, pagination range, path convention) and thank him for his patience. Nothing actionable for QF to do. Will draft and send separately.
+Closure reply on the `developers@quran.com` thread. Brief, accountable, documented the three root causes on our side (closure-capture in the probe page, out-of-range pagination param, snake_case vs kebab-case path). No action required from QF. Draft archived at `~/siraj-noor-email-basit-closure.txt`.
 
 ---
 
