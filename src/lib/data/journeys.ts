@@ -46,7 +46,7 @@ export const journeys: Journey[] = [
         nameArabic: "مكة",
         lat: 21.4225,
         lon: 39.8262,
-        description: "Origin — Muslims fled persecution by the Quraysh",
+        description: "Origin - Muslims fled persecution by the Quraysh",
         isOrigin: true,
       },
       {
@@ -61,7 +61,7 @@ export const journeys: Journey[] = [
         nameArabic: "أكسوم",
         lat: 14.121,
         lon: 38.7468,
-        description: "Capital of the Aksumite Kingdom — court of the Najashi",
+        description: "Capital of the Aksumite Kingdom - court of the Najashi",
         isDestination: true,
       },
     ],
@@ -110,7 +110,7 @@ export const journeys: Journey[] = [
         nameArabic: "مكة",
         lat: 21.4225,
         lon: 39.8262,
-        description: "Origin — larger group fleeing intensified persecution",
+        description: "Origin - larger group fleeing intensified persecution",
         isOrigin: true,
       },
       {
@@ -161,7 +161,7 @@ export const journeys: Journey[] = [
         nameArabic: "مكة",
         lat: 21.4225,
         lon: 39.8262,
-        description: "Origin — after 13 years of prophethood in Makkah",
+        description: "Origin - after 13 years of prophethood in Makkah",
         isOrigin: true,
       },
       {
@@ -183,14 +183,14 @@ export const journeys: Journey[] = [
         nameArabic: "قباء",
         lat: 24.4397,
         lon: 39.6172,
-        description: "Arrived here first — built the first mosque in Islam (Masjid Quba)",
+        description: "Arrived here first - built the first mosque in Islam (Masjid Quba)",
       },
       {
         name: "Madinah",
         nameArabic: "المدينة المنورة",
         lat: 24.4672,
         lon: 39.6112,
-        description: "Final destination — the city of the Prophet ﷺ, where the Muslim community was established",
+        description: "Final destination - the city of the Prophet ﷺ, where the Muslim community was established",
         isDestination: true,
       },
     ],
@@ -207,7 +207,7 @@ export const journeys: Journey[] = [
         nameArabic: "أسماء بنت أبي بكر",
         role: "Daughter of Abu Bakr",
         description:
-          "Known as 'She of the Two Belts' (Dhat al-Nitaqayn) — tore her belt to tie provisions for the Prophet ﷺ and her father's journey.",
+          "Known as 'She of the Two Belts' (Dhat al-Nitaqayn) - tore her belt to tie provisions for the Prophet ﷺ and her father's journey.",
       },
       {
         name: "Abdullah ibn Urayqit",
@@ -254,7 +254,7 @@ export const journeys: Journey[] = [
         nameArabic: "الطائف",
         lat: 21.2703,
         lon: 40.4159,
-        description: "Mountain city of the Thaqif tribe — the Prophet ﷺ was rejected and stoned",
+        description: "Mountain city of the Thaqif tribe - the Prophet ﷺ was rejected and stoned",
         isDestination: true,
       },
     ],
@@ -289,7 +289,7 @@ export const journeys: Journey[] = [
         nameArabic: "المسجد الحرام",
         lat: 21.4225,
         lon: 39.8262,
-        description: "Starting point — the Sacred Mosque in Makkah",
+        description: "Starting point - the Sacred Mosque in Makkah",
         isOrigin: true,
       },
       {
@@ -325,7 +325,7 @@ export const journeys: Journey[] = [
     year: "624 CE",
     yearHijri: "2 AH",
     description:
-      "The first major battle in Islam. 313 Muslims marched from Madinah to intercept a Quraysh caravan, but instead faced an army of around 1,000. With divine assistance, the Muslims achieved a decisive victory. Referenced extensively in Surah al-Anfal (8). The Qur'an calls it 'Yawm al-Furqan' — the Day of Distinction (8:41).",
+      "The first major battle in Islam. 313 Muslims marched from Madinah to intercept a Quraysh caravan, but instead faced an army of around 1,000. With divine assistance, the Muslims achieved a decisive victory. Referenced extensively in Surah al-Anfal (8). The Qur'an calls it 'Yawm al-Furqan' - the Day of Distinction (8:41).",
     colour: "#ef4444",
     waypoints: [
       {
@@ -341,7 +341,7 @@ export const journeys: Journey[] = [
         nameArabic: "بدر",
         lat: 23.7833,
         lon: 38.7833,
-        description: "Site of the battle — the wells of Badr, between Makkah and Madinah",
+        description: "Site of the battle - the wells of Badr, between Makkah and Madinah",
         isDestination: true,
       },
     ],
@@ -376,7 +376,7 @@ export const journeys: Journey[] = [
     year: "628 CE",
     yearHijri: "6 AH",
     description:
-      "The Prophet ﷺ set out with about 1,400 Companions for Umrah but was stopped at Hudaybiyyah, near Makkah. A treaty was negotiated which appeared unfavourable but the Qur'an called it a 'clear victory' (Fath, 48:1). The peace allowed Islam to spread rapidly — more people accepted Islam in the next two years than in all previous years combined.",
+      "The Prophet ﷺ set out with about 1,400 Companions for Umrah but was stopped at Hudaybiyyah, near Makkah. A treaty was negotiated which appeared unfavourable but the Qur'an called it a 'clear victory' (Fath, 48:1). The peace allowed Islam to spread rapidly - more people accepted Islam in the next two years than in all previous years combined.",
     colour: "#06b6d4",
     waypoints: [
       {
@@ -392,7 +392,7 @@ export const journeys: Journey[] = [
         nameArabic: "الحديبية",
         lat: 21.45,
         lon: 39.75,
-        description: "On the edge of the Haram boundary — the treaty was signed under a tree (Bay'at al-Ridwan)",
+        description: "On the edge of the Haram boundary - the treaty was signed under a tree (Bay'at al-Ridwan)",
         isDestination: true,
       },
     ],
@@ -443,7 +443,7 @@ export const journeys: Journey[] = [
         nameArabic: "مكة المكرمة",
         lat: 21.4225,
         lon: 39.8262,
-        description: "Conquered peacefully — the Ka'bah was cleansed of idols, general amnesty declared",
+        description: "Conquered peacefully - the Ka'bah was cleansed of idols, general amnesty declared",
         isDestination: true,
       },
     ],
@@ -478,7 +478,7 @@ export const journeys: Journey[] = [
     year: "630 CE",
     yearHijri: "9 AH",
     description:
-      "The longest and most difficult military expedition — a ~700km march north in extreme heat to confront a rumoured Byzantine advance. The army of 30,000 reached Tabuk but no battle occurred. Referenced extensively in Surah at-Tawbah (9), which exposed the hypocrites who refused to march.",
+      "The longest and most difficult military expedition - a ~700km march north in extreme heat to confront a rumoured Byzantine advance. The army of 30,000 reached Tabuk but no battle occurred. Referenced extensively in Surah at-Tawbah (9), which exposed the hypocrites who refused to march.",
     colour: "#8b5cf6",
     waypoints: [
       {
@@ -494,14 +494,14 @@ export const journeys: Journey[] = [
         nameArabic: "الحجر (مدائن صالح)",
         lat: 26.79,
         lon: 37.95,
-        description: "Passed through the ruins of Thamud — the Prophet ﷺ warned not to drink from its wells",
+        description: "Passed through the ruins of Thamud - the Prophet ﷺ warned not to drink from its wells",
       },
       {
         name: "Tabuk",
         nameArabic: "تبوك",
         lat: 28.3838,
         lon: 36.5667,
-        description: "Northern frontier — the army camped for 20 days. Several local tribes signed peace treaties.",
+        description: "Northern frontier - the army camped for 20 days. Several local tribes signed peace treaties.",
         isDestination: true,
       },
     ],
@@ -536,7 +536,7 @@ export const journeys: Journey[] = [
     year: "632 CE",
     yearHijri: "10 AH",
     description:
-      "The Prophet's ﷺ only Hajj and his final major journey. Over 100,000 Companions accompanied him. At Arafat, he delivered the Farewell Sermon — a landmark declaration of human rights, equality, and the completion of the religion. Shortly after, the verse was revealed: 'Today I have perfected your religion for you' (5:3).",
+      "The Prophet's ﷺ only Hajj and his final major journey. Over 100,000 Companions accompanied him. At Arafat, he delivered the Farewell Sermon - a landmark declaration of human rights, equality, and the completion of the religion. Shortly after, the verse was revealed: 'Today I have perfected your religion for you' (5:3).",
     colour: "#f59e0b",
     waypoints: [
       {
@@ -559,7 +559,7 @@ export const journeys: Journey[] = [
         nameArabic: "عرفات",
         lat: 21.3549,
         lon: 39.9842,
-        description: "Delivered the Farewell Sermon — 'All mankind is from Adam, and Adam is from dust'",
+        description: "Delivered the Farewell Sermon - 'All mankind is from Adam, and Adam is from dust'",
       },
       {
         name: "Muzdalifah",

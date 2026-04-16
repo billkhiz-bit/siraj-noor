@@ -7,7 +7,7 @@
 // progress bar, updated live as the user scrolls through.
 //
 // We deliberately do NOT sync this to the Quran Foundation reading
-// session API — that endpoint is chapter-granular and firing 286
+// session API - that endpoint is chapter-granular and firing 286
 // POSTs to log individual ayahs of Al-Baqarah would be wasteful.
 // This is a purely client-side signal so the reader can feel their
 // progress without cost.
@@ -40,7 +40,7 @@ export function VerseProgressIndicator({ verses }: VerseProgressIndicatorProps) 
           if (readRef.current.has(key)) continue;
 
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-            // Start a dwell timer — verse must stay in view DWELL_MS to count
+            // Start a dwell timer - verse must stay in view DWELL_MS to count
             if (!pendingRef.current.has(key)) {
               const timer = window.setTimeout(() => {
                 readRef.current.add(key);
@@ -50,7 +50,7 @@ export function VerseProgressIndicator({ verses }: VerseProgressIndicatorProps) 
               pendingRef.current.set(key, timer);
             }
           } else {
-            // Left view before dwell completed — clear the pending timer
+            // Left view before dwell completed - clear the pending timer
             const timer = pendingRef.current.get(key);
             if (timer !== undefined) {
               window.clearTimeout(timer);
@@ -66,7 +66,7 @@ export function VerseProgressIndicator({ verses }: VerseProgressIndicatorProps) 
     rows.forEach((row) => observer.observe(row));
 
     // Show the indicator once the user has actually scrolled past
-    // the header into the verse list — avoids a distracting pop-in
+    // the header into the verse list - avoids a distracting pop-in
     // before reading begins.
     const firstVerse = rows[0];
     let revealObserver: IntersectionObserver | null = null;

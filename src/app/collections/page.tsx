@@ -22,7 +22,7 @@ export default function CollectionsPage() {
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
     if (!draftName.trim()) return;
-    // QF's /collections POST accepts only `name` — description is not
+    // QF's /collections POST accepts only `name` - description is not
     // part of the schema. Dropped the optional description input to
     // avoid promising a field we can't persist.
     await create(draftName);
@@ -58,7 +58,7 @@ export default function CollectionsPage() {
             Collections
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Curated sets of ayahs — themed, personal, and synced via your
+            Curated sets of ayahs - themed, personal, and synced via your
             Quran.com account.
           </p>
         </header>
@@ -69,7 +69,7 @@ export default function CollectionsPage() {
               Preview
             </div>
             <p className="mb-3 text-foreground/90">
-              Collections let you group saved ayahs into themes — like
+              Collections let you group saved ayahs into themes - like
               &ldquo;Verses for hard days&rdquo; or &ldquo;Before Fajr&rdquo;.
               Sign in to replace this preview with your own.
             </p>
@@ -99,7 +99,7 @@ export default function CollectionsPage() {
           </div>
         )}
 
-        {/* Create form — only visible for real live sessions */}
+        {/* Create form - only visible for real live sessions */}
         {!isPreview && isAuthenticated && (
           <form
             onSubmit={handleCreate}

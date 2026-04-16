@@ -546,7 +546,7 @@ export function RevelationGlobe() {
 
   return (
     <div className="relative h-[calc(100vh-2rem)] w-full overflow-hidden rounded-xl bg-[#030308]">
-      {/* 3D Canvas — full viewport */}
+      {/* 3D Canvas - full viewport */}
       <Canvas
         camera={{ position: [-0.5, 1, 6], fov: 48 }}
         gl={{ antialias: true, alpha: false }}

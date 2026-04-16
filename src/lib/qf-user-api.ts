@@ -63,7 +63,7 @@ async function qfFetch<T>(
 
   if (!response.ok) {
     throw new QfApiError(
-      `${response.status} ${response.statusText}${bodyText ? ` — ${bodyText}` : ""}`,
+      `${response.status} ${response.statusText}${bodyText ? ` - ${bodyText}` : ""}`,
       response.status
     );
   }
@@ -214,7 +214,7 @@ export const qfApi = {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _note?: string
   ): Promise<Bookmark> => {
-    // QF POST /bookmarks takes {key, verseNumber, mushaf, type:"ayah"} —
+    // QF POST /bookmarks takes {key, verseNumber, mushaf, type:"ayah"} -
     // no free-form `note` field (OpenAPI says additionalProperties:false,
     // so sending it would 422). We split the "chapter:verse" string the
     // UI passes in. Silently drop `note` for now; add it back if QF ever
@@ -306,12 +306,12 @@ export const qfApi = {
     // /streaks/current-streak-days returns a scalar {days}. The list
     // endpoint /streaks returns paginated history, which isn't what the
     // activity page wants. QF's User API v1 doesn't currently expose a
-    // longest-streak scalar, so we return 0 as a sentinel — the UI
-    // renders "—" for longest when the value is 0 rather than showing
+    // longest-streak scalar, so we return 0 as a sentinel - the UI
+    // renders "-" for longest when the value is 0 rather than showing
     // an equal mirror of the current streak (which would be misleading).
     //
     // x-timezone lets the server compute "today" against the user's
-    // local day boundary rather than UTC — a streak of 3 at 2300 Pacific
+    // local day boundary rather than UTC - a streak of 3 at 2300 Pacific
     // stays at 3 past midnight UTC instead of resetting. QF lists the
     // header as optional but recommended; we default to the browser's
     // IANA zone and fall back to UTC on SSR or exotic runtimes.
@@ -332,7 +332,7 @@ export const qfApi = {
   // createReflection is intentionally omitted. QF's POST /posts is a
   // community-room feature, not a private notes endpoint: the schema
   // requires roomId, postAsAuthorId, publishedAt, references array,
-  // mentions array, and a room-post status — see CreatePostDto in
+  // mentions array, and a room-post status - see CreatePostDto in
   // api-docs.quran.foundation. Our original UX ("private note on an
   // ayah, visible only to you") doesn't map onto community posts, so
   // we removed the button rather than ship a surface that 4xxs on

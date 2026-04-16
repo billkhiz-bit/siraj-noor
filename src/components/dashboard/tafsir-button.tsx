@@ -2,7 +2,7 @@
 
 // Per-verse tafsir toggle. The button lives in the verse row's action
 // column alongside BookmarkButton. The actual expanded commentary
-// panel renders below the row via the VerseRow wrapper — we only
+// panel renders below the row via the VerseRow wrapper - we only
 // own the button + fetch here so the row component can lay the
 // panel out with full width rather than being constrained to the
 // narrow action-column grid cell.
@@ -129,7 +129,7 @@ export function TafsirPanel({ verseKey, tafsir, loading }: TafsirPanelProps) {
       {!loading && tafsir && (
         <div
           className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-foreground/85"
-          // Tafsir text is pre-sanitised HTML from Qur'an.com's API —
+          // Tafsir text is pre-sanitised HTML from Qur'an.com's API -
           // their sanitisation pipeline strips scripts and attributes.
           dangerouslySetInnerHTML={{ __html: tafsir.text }}
         />

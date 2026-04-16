@@ -4,7 +4,7 @@
 // a streak milestone (7, 30, 100 days). Keyed on the JWT sub claim
 // in localStorage so each user gets to experience each milestone
 // exactly once. Self-dismisses after ~4s or on click. Intentionally
-// subtle — no confetti blasts — to stay coherent with the dark
+// subtle - no confetti blasts - to stay coherent with the dark
 // amber aesthetic.
 
 import { useEffect, useState } from "react";

@@ -63,7 +63,7 @@ export function OnboardingChecklist() {
       id: "explore",
       label: "Open a 3D view",
       detail:
-        "Surah Structure, 99 Names, Prophet Timeline — pick any from the sidebar.",
+        "Surah Structure, 99 Names, Prophet Timeline - pick any from the sidebar.",
       done: readSurahs.size > 0,
     },
     {
@@ -76,7 +76,7 @@ export function OnboardingChecklist() {
 
   const doneCount = steps.filter((s) => s.done).length;
 
-  // Auto-dismiss once all four complete — the checklist has served
+  // Auto-dismiss once all four complete - the checklist has served
   // its purpose. Don't need to persist this case; future mounts will
   // re-evaluate and re-hide.
   if (dismissed || doneCount === steps.length) return null;

@@ -5,7 +5,7 @@
 // minor variation) isn't in the first-paint bundle of every surah
 // detail page. The surah page itself is a server component (async,
 // generateStaticParams over 114 chapters) so it can't call
-// next/dynamic directly — this wrapper bridges the two worlds.
+// next/dynamic directly - this wrapper bridges the two worlds.
 
 import dynamic from "next/dynamic";
 

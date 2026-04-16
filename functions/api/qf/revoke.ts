@@ -1,15 +1,15 @@
-// Cloudflare Pages Function — QF token revocation proxy
+// Cloudflare Pages Function - QF token revocation proxy
 //
 // Hydra's /oauth2/revoke endpoint requires the same confidential
 // client authentication as /oauth2/token (client_secret_basic), so
 // revocation has to go through a proxy for the same reason as token
-// exchange and refresh. The endpoint is RFC 7009 — POST the token to
+// exchange and refresh. The endpoint is RFC 7009 - POST the token to
 // be revoked with the client's Basic auth header, server responds 200
 // whether the token was active or already revoked.
 //
 // This is called during logout *before* the browser redirects to
 // Hydra's session logout. Clearing the refresh_token server-side is
-// what actually ends the grant — without this, a compromised refresh
+// what actually ends the grant - without this, a compromised refresh
 // token could mint new access tokens long after the user signed out.
 
 interface Env {
@@ -116,13 +116,13 @@ export const onRequestPost = async ({
       body: form.toString(),
     });
   } catch {
-    // Revocation failures are not user-actionable — log-and-forget.
+    // Revocation failures are not user-actionable - log-and-forget.
     // The local token clear in the browser has already happened; at
     // worst the refresh_token remains live on QF's side until it
     // expires naturally. Not ideal, but not a credential leak either.
   }
 
-  // RFC 7009: always 200 on revoke — the caller can't distinguish
+  // RFC 7009: always 200 on revoke - the caller can't distinguish
   // "revoked" from "was already revoked" from "didn't exist" by design.
   return new Response(JSON.stringify({ success: true }), {
     status: 200,

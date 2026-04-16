@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Siraj Noor",
+  title: "Terms of Service - Siraj Noor",
   description:
     "Terms governing your use of Siraj Noor, a non-commercial open-source Qur'an and Hadith companion.",
 };
@@ -59,7 +59,7 @@ export default function TermsPage() {
               reflections) require signing in with a Quran Foundation account.
               Your use of that account is governed by Quran Foundation&apos;s
               own terms of service and privacy policy. Siraj Noor acts only as
-              a client — we never receive or store your credentials, only the
+              a client - we never receive or store your credentials, only the
               OAuth tokens your browser uses to talk to Quran Foundation
               directly.
             </p>

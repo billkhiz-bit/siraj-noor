@@ -1,4 +1,4 @@
-# Static assets — immutable hashed filenames, cache aggressively
+# Static assets - immutable hashed filenames, cache aggressively
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
@@ -12,7 +12,7 @@
 /*.svg
   Cache-Control: public, max-age=86400
 
-# HTML pages — short cache with revalidation
+# HTML pages - short cache with revalidation
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
 
@@ -23,7 +23,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Permissions-Policy: camera=(), microphone=(), geolocation=(), usb=(), payment=()
-  # Content-Security-Policy intentionally omitted — needs report-only
+  # Content-Security-Policy intentionally omitted - needs report-only
   # pass against the live bundle to confirm every allowed host before
   # re-enabling. Clickjacking is already covered by X-Frame-Options:
   # DENY above; XSS surface is small because we don't accept HTML

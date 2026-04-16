@@ -2,8 +2,8 @@
 
 // First-visit splash on /dashboard. Fullscreen amber bloom with the
 // project name and a tagline, fades out after 4.5s or on click.
-// Intentionally lightweight — no Three.js camera choreography, just
-// CSS transforms and opacity — so it doesn't compete with the 3D
+// Intentionally lightweight - no Three.js camera choreography, just
+// CSS transforms and opacity - so it doesn't compete with the 3D
 // Surah Ring rendering beneath it and can't regress on slower
 // devices. Tracked via localStorage so returning users go straight
 // into the app.
@@ -20,7 +20,7 @@ export function IntroSplash() {
     if (typeof window === "undefined") return;
     const seen = localStorage.getItem(STORAGE_KEY);
     if (seen === "true") return;
-    // Mark as seen immediately — if the user dismisses before the
+    // Mark as seen immediately - if the user dismisses before the
     // autohide fires, we still don't want to replay it on the next
     // navigation.
     localStorage.setItem(STORAGE_KEY, "true");

@@ -1,11 +1,11 @@
 // Top triliteral roots in the Qur'an by occurrence count. Counts
-// from the Quranic Arabic Corpus (corpus.quran.com) — their
+// from the Quranic Arabic Corpus (corpus.quran.com) - their
 // morphological analysis, which is the canonical reference.
 // Roots are written with hyphens between the three radicals for
 // clarity (ر-ح-م rather than رحم) so each radical reads left-to-right
 // when the whole glyph is visually read right-to-left.
 //
-// This is a curated subset — the top ~20 by occurrence — not
+// This is a curated subset - the top ~20 by occurrence - not
 // exhaustive. The goal is to give readers a feel for the lexical
 // spine of the Qur'an: which semantic fields recur most.
 
@@ -30,7 +30,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     exemplar: {
       verseKey: "2:30",
       reason:
-        "When your Lord SAID to the angels — the verb qala opens one of the most famous dialogues in the Qur'an.",
+        "When your Lord SAID to the angels - the verb qala opens one of the most famous dialogues in the Qur'an.",
     },
   },
   {
@@ -40,7 +40,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 2853,
     exemplar: {
       verseKey: "2:255",
-      reason: "Allah — there is no ILAH but He. The declaration of tawhid.",
+      reason: "Allah - there is no ILAH but He. The declaration of tawhid.",
     },
   },
   {
@@ -61,7 +61,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     exemplar: {
       verseKey: "2:32",
       reason:
-        "'We have no knowledge except what You taught us' — the angels'  response to being taught the names.",
+        "'We have no knowledge except what You taught us' - the angels'  response to being taught the names.",
     },
   },
   {
@@ -71,7 +71,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 1358,
     exemplar: {
       verseKey: "2:117",
-      reason: "'Be' and it is — KUN fa-yakun, the creative command.",
+      reason: "'Be' and it is - KUN fa-yakun, the creative command.",
     },
   },
   {
@@ -81,7 +81,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 339,
     exemplar: {
       verseKey: "1:3",
-      reason: "Ar-Rahman, Ar-Rahim — both forms of the root open every surah.",
+      reason: "Ar-Rahman, Ar-Rahim - both forms of the root open every surah.",
     },
   },
   {
@@ -91,7 +91,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 319,
     exemplar: {
       verseKey: "2:183",
-      reason: "Fasting was written — KUTIBA — upon those before you.",
+      reason: "Fasting was written - KUTIBA - upon those before you.",
     },
   },
   {
@@ -101,7 +101,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 212,
     exemplar: {
       verseKey: "2:186",
-      reason: "When My servants ask you about Me — I respond to the DU'A of the supplicant.",
+      reason: "When My servants ask you about Me - I respond to the DU'A of the supplicant.",
     },
   },
   {
@@ -121,7 +121,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 879,
     exemplar: {
       verseKey: "2:285",
-      reason: "Amana — the Messenger believed in what was revealed to him.",
+      reason: "Amana - the Messenger believed in what was revealed to him.",
     },
   },
   {
@@ -131,7 +131,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 103,
     exemplar: {
       verseKey: "2:153",
-      reason: "Seek help through SABR and prayer — Allah is with the patient.",
+      reason: "Seek help through SABR and prayer - Allah is with the patient.",
     },
   },
   {
@@ -141,7 +141,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 75,
     exemplar: {
       verseKey: "14:7",
-      reason: "If you are thankful I will add more to you — the gratitude promise.",
+      reason: "If you are thankful I will add more to you - the gratitude promise.",
     },
   },
   {
@@ -161,7 +161,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 28,
     exemplar: {
       verseKey: "16:90",
-      reason: "Allah commands justice — AL-'ADL.",
+      reason: "Allah commands justice - AL-'ADL.",
     },
   },
   {
@@ -171,7 +171,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 275,
     exemplar: {
       verseKey: "1:5",
-      reason: "You alone we worship — NA'BUDU.",
+      reason: "You alone we worship - NA'BUDU.",
     },
   },
   {
@@ -181,7 +181,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 140,
     exemplar: {
       verseKey: "2:208",
-      reason: "Enter into Islam completely — AL-SILM kaffah.",
+      reason: "Enter into Islam completely - AL-SILM kaffah.",
     },
   },
   {
@@ -191,7 +191,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 261,
     exemplar: {
       verseKey: "96:1",
-      reason: "Read — in the name of your Lord who CREATED.",
+      reason: "Read - in the name of your Lord who CREATED.",
     },
   },
   {
@@ -201,7 +201,7 @@ export const TOP_QURAN_ROOTS: QuranRoot[] = [
     occurrences: 316,
     exemplar: {
       verseKey: "1:6",
-      reason: "Guide us — IHDINA — to the straight path.",
+      reason: "Guide us - IHDINA - to the straight path.",
     },
   },
 ];

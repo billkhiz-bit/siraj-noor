@@ -1,13 +1,13 @@
 // Hand-curated mapping of famous ayahs to the hadith commentary that
 // Muslims most commonly associate with them. Deliberately small and
-// conservative — every entry is from one of the six canonical
+// conservative - every entry is from one of the six canonical
 // collections (Bukhari, Muslim, Abu Dawud, al-Tirmidhi, al-Nasa'i,
 // Ibn Majah) and is summarised from a gist the reader can verify
 // against sunnah.com at the linked reference.
 //
 // Not exhaustive. The app surfaces these when present and renders
 // nothing when a verse has no entry, so adding more references is
-// purely additive — just append to the map.
+// purely additive - just append to the map.
 
 export interface HadithReference {
   collection: string;
@@ -17,7 +17,7 @@ export interface HadithReference {
 }
 
 export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
-  // Al-Fatihah — the opening chapter
+  // Al-Fatihah - the opening chapter
   "1:1": [
     {
       collection: "Sahih al-Bukhari",
@@ -32,12 +32,12 @@ export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
       collection: "Sahih Muslim",
       reference: "Muslim 395",
       summary:
-        "A hadith qudsi: Allah divides Al-Fatihah between Himself and His servant — and He says, when the servant says 'You alone we worship', 'This is between Me and My servant'.",
+        "A hadith qudsi: Allah divides Al-Fatihah between Himself and His servant - and He says, when the servant says 'You alone we worship', 'This is between Me and My servant'.",
       url: "https://sunnah.com/muslim:395",
     },
   ],
 
-  // Ayat al-Kursi — the greatest verse
+  // Ayat al-Kursi - the greatest verse
   "2:255": [
     {
       collection: "Sahih Muslim",
@@ -75,7 +75,7 @@ export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
     },
   ],
 
-  // Ali Imran — seeking refuge
+  // Ali Imran - seeking refuge
   "3:26": [
     {
       collection: "Jami at-Tirmidhi",
@@ -86,29 +86,29 @@ export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
     },
   ],
 
-  // An-Nisa — the verse of trusts
+  // An-Nisa - the verse of trusts
   "4:58": [
     {
       collection: "Sahih al-Bukhari",
       reference: "Bukhari 59",
       summary:
-        "The Prophet ﷺ on the signs of the Hour, including the neglect of trusts — connected to this verse's command to return trusts to their owners.",
+        "The Prophet ﷺ on the signs of the Hour, including the neglect of trusts - connected to this verse's command to return trusts to their owners.",
       url: "https://sunnah.com/bukhari:59",
     },
   ],
 
-  // Al-Ma'idah — perfection of religion
+  // Al-Ma'idah - perfection of religion
   "5:3": [
     {
       collection: "Sahih al-Bukhari",
       reference: "Bukhari 45",
       summary:
-        "A Jewish man said to Umar: if this verse had been revealed to us, we would have taken that day as a festival. Umar replied that the Muslims know the day and the place it was revealed — at Arafat on a Friday.",
+        "A Jewish man said to Umar: if this verse had been revealed to us, we would have taken that day as a festival. Umar replied that the Muslims know the day and the place it was revealed - at Arafat on a Friday.",
       url: "https://sunnah.com/bukhari:45",
     },
   ],
 
-  // Al-An'am — the final breath
+  // Al-An'am - the final breath
   "6:151": [
     {
       collection: "Sahih al-Bukhari",
@@ -119,29 +119,29 @@ export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
     },
   ],
 
-  // Yusuf — the best of stories
+  // Yusuf - the best of stories
   "12:3": [
     {
       collection: "Sunan Ibn Majah",
       reference: "Ibn Majah 3797",
       summary:
-        "On the virtue of teaching Surah Yusuf to one's family — connected to the opening framing of the surah as 'the best of stories'.",
+        "On the virtue of teaching Surah Yusuf to one's family - connected to the opening framing of the surah as 'the best of stories'.",
       url: "https://sunnah.com/ibnmajah:3797",
     },
   ],
 
-  // Al-Isra — the night prayer
+  // Al-Isra - the night prayer
   "17:79": [
     {
       collection: "Sahih Muslim",
       reference: "Muslim 1163",
       summary:
-        "The Prophet ﷺ said: the best prayer after the obligatory is the night prayer — Tahajjud. This verse commands it.",
+        "The Prophet ﷺ said: the best prayer after the obligatory is the night prayer - Tahajjud. This verse commands it.",
       url: "https://sunnah.com/muslim:1163",
     },
   ],
 
-  // Al-Kahf — the Dajjal protection
+  // Al-Kahf - the Dajjal protection
   "18:10": [
     {
       collection: "Sahih Muslim",
@@ -152,18 +152,18 @@ export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
     },
   ],
 
-  // An-Nur — the verse of light
+  // An-Nur - the verse of light
   "24:35": [
     {
       collection: "Jami at-Tirmidhi",
       reference: "Tirmidhi 3117",
       summary:
-        "Commentary narrated from Ubay ibn Ka'b on the parable of divine light — the niche, the lamp, the olive tree — as referring to the believer's heart illuminated by faith.",
+        "Commentary narrated from Ubay ibn Ka'b on the parable of divine light - the niche, the lamp, the olive tree - as referring to the believer's heart illuminated by faith.",
       url: "https://sunnah.com/tirmidhi:3117",
     },
   ],
 
-  // Ya-Sin — the heart of the Qur'an
+  // Ya-Sin - the heart of the Qur'an
   "36:1": [
     {
       collection: "Jami at-Tirmidhi",
@@ -174,7 +174,7 @@ export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
     },
   ],
 
-  // Ar-Rahman — the refrain
+  // Ar-Rahman - the refrain
   "55:13": [
     {
       collection: "Jami at-Tirmidhi",
@@ -185,18 +185,18 @@ export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
     },
   ],
 
-  // Al-Mulk — the protector
+  // Al-Mulk - the protector
   "67:1": [
     {
       collection: "Jami at-Tirmidhi",
       reference: "Tirmidhi 2891",
       summary:
-        "The Prophet ﷺ said: a surah from the Qur'an of thirty verses intercedes for its reader until he is forgiven — Surah al-Mulk.",
+        "The Prophet ﷺ said: a surah from the Qur'an of thirty verses intercedes for its reader until he is forgiven - Surah al-Mulk.",
       url: "https://sunnah.com/tirmidhi:2891",
     },
   ],
 
-  // Al-Ikhlas — the oneness
+  // Al-Ikhlas - the oneness
   "112:1": [
     {
       collection: "Sahih al-Bukhari",
@@ -207,13 +207,13 @@ export const HADITH_BY_VERSE: Record<string, HadithReference[]> = {
     },
   ],
 
-  // Mu'awwidhatayn — the two refuges
+  // Mu'awwidhatayn - the two refuges
   "113:1": [
     {
       collection: "Sahih Muslim",
       reference: "Muslim 814",
       summary:
-        "The Prophet ﷺ said: verses like these have never been revealed before — the two suras of refuge protect against every kind of harm.",
+        "The Prophet ﷺ said: verses like these have never been revealed before - the two suras of refuge protect against every kind of harm.",
       url: "https://sunnah.com/muslim:814",
     },
   ],

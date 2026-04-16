@@ -1,6 +1,6 @@
 "use client";
 
-// Root-level error boundary — catches any thrown error anywhere in the
+// Root-level error boundary - catches any thrown error anywhere in the
 // app tree that hasn't been handled by a more specific segment boundary.
 // Exists primarily so we never again see Next.js's generic "This page
 // couldn't load" with no details; any crash shows the actual error name,
@@ -40,7 +40,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
           Something went wrong
         </div>
         <p className="mb-3 text-muted-foreground">
-          Siraj Noor hit an unexpected error. Details below — please
+          Siraj Noor hit an unexpected error. Details below - please
           screenshot if you&apos;re reporting it.
         </p>
 

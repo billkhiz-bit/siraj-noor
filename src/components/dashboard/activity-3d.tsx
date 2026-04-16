@@ -301,7 +301,7 @@ export function Activity3D({
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.25;
         }}
-        // Click on empty space dismisses the pinned cell — matches the
+        // Click on empty space dismisses the pinned cell - matches the
         // click-to-pin + click-empty-to-dismiss pattern used on the
         // Surah Ring and the Word Cloud.
         onPointerMissed={() => onDaySelect?.(null)}

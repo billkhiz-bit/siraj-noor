@@ -23,9 +23,9 @@ function dayIsoFromSession(session: ReadingSession): string | null {
 }
 
 function formatSessionTime(iso?: string): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
@@ -114,7 +114,7 @@ export default function ActivityPage() {
               Preview
             </div>
             <p className="mb-3 text-foreground/90">
-              This is a sample Activity view — a full-year 3D heatmap of reading
+              This is a sample Activity view - a full-year 3D heatmap of reading
               sessions. Sign in with Quran.com to replace the sample data with
               your own streak and session history.
             </p>
@@ -166,7 +166,7 @@ export default function ActivityPage() {
                   Longest streak
                 </p>
                 <p className="mt-1 font-mono text-3xl font-bold text-foreground">
-                  {displayStreak.longest > 0 ? displayStreak.longest : "—"}
+                  {displayStreak.longest > 0 ? displayStreak.longest : "-"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {displayStreak.longest > 0

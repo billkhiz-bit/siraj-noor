@@ -5,7 +5,7 @@
 // by default). Keeps to a native <audio> element so we inherit the
 // browser's built-in keyboard controls, volume remembering, media
 // session API integration (iOS lock-screen controls work
-// automatically), and accessible transport surface — no bespoke
+// automatically), and accessible transport surface - no bespoke
 // state machine needed.
 
 import { useEffect, useState } from "react";

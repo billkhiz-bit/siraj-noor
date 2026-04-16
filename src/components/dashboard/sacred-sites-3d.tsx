@@ -143,7 +143,7 @@ function MountUhudModel({ active }: { active: boolean }) {
     return geo;
   }, []);
 
-  // Archers' hill — small mound, much lower than Uhud (~20m vs 1077m)
+  // Archers' hill - small mound, much lower than Uhud (~20m vs 1077m)
   const archersHill = useMemo(() => {
     const geo = new THREE.PlaneGeometry(2, 2, 15, 15);
     const pos = geo.attributes.position;
@@ -164,7 +164,7 @@ function MountUhudModel({ active }: { active: boolean }) {
   return (
     <group ref={groupRef}>
       <MountainWithParticles geo={mainRidge} colour="#ef4444" labels={[{ pos: [0, 3.5, 0], text: "Mount Uhud" }]} active={active} />
-      {/* Archers' hill (Jabal al-Rumah) — ~1km south of Uhud, clearly separate */}
+      {/* Archers' hill (Jabal al-Rumah) - ~1km south of Uhud, clearly separate */}
       <group position={[2, 0, -9]}>
         <MountainWithParticles geo={archersHill} colour="#f59e0b" labels={[{ pos: [0, 1.6, 0], text: "Archers' Hill" }, { pos: [0, 1.3, 0], text: "(Jabal al-Rumah)", colour: "#64748b" }]} active={active} />
       </group>
@@ -448,7 +448,7 @@ export function SacredSites3D() {
 
   return (
     <div className="flex h-[calc(100vh-2rem)] w-full gap-3 overflow-hidden rounded-xl">
-      {/* 3D Canvas — left side */}
+      {/* 3D Canvas - left side */}
       <div className="relative flex-1 overflow-hidden rounded-xl bg-[#030308]">
         <Canvas
           camera={{ position: [0, 3, 8], fov: 50 }}
@@ -479,7 +479,7 @@ export function SacredSites3D() {
         </div>
       </div>
 
-      {/* Info panel — right side, no overlap */}
+      {/* Info panel - right side, no overlap */}
       <div className="w-80 shrink-0 overflow-y-auto rounded-xl border border-border bg-card p-5">
         {/* Site selector */}
         <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-amber-500/80">◈ Select Site</p>

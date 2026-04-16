@@ -91,7 +91,7 @@ export function ReadingProgressProvider({ children }: { children: ReactNode }) {
       console.error("[ReadingProgressProvider] reload threw:", err);
       setError(
         err instanceof QfApiError && err.status === 401
-          ? "Sign-in session expired — sign in again."
+          ? "Sign-in session expired - sign in again."
           : "Couldn't load your reading progress right now."
       );
     } finally {

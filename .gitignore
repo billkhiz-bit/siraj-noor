@@ -35,7 +35,7 @@ yarn-error.log*
 !.env.production
 !.env.local.example
 
-# Cloudflare Pages Functions local env — never commit
+# Cloudflare Pages Functions local env - never commit
 .dev.vars
 
 # vercel

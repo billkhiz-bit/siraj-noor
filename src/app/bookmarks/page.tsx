@@ -51,7 +51,7 @@ export default function BookmarksPage() {
           </p>
         </header>
 
-        {/* Preview banner — only appears in preview modes */}
+        {/* Preview banner - only appears in preview modes */}
         {mode === "preview-signed-out" && (
           <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-4 text-sm">
             <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400">

@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Siraj Noor — Qur'an & Hadith Data Visualisation",
+  title: "Siraj Noor - Qur'an & Hadith Data Visualisation",
   description:
     "Interactive 3D dashboard illuminating the structure, themes, and connections within the Qur'an and Hadith collections, with personal bookmarks, collections, streaks, and reflections powered by Quran Foundation.",
 };

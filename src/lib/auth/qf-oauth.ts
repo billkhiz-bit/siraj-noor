@@ -50,7 +50,7 @@ function tokensFromResponse(resp: TokenResponse): StoredTokens {
 }
 
 // Decode the unverified payload of a JWT. We don't verify the signature
-// here — id_tokens come through a TLS-protected back channel from a
+// here - id_tokens come through a TLS-protected back channel from a
 // trusted IdP, and we only use the payload for OIDC spec-mandated claim
 // checks (aud, iss, exp, nonce). A full JWKS-based signature check would
 // require bundling a JWT lib and pulling the JWKS endpoint on every
@@ -75,7 +75,7 @@ function verifyIdTokenClaims(
   if (!idToken) return; // id_token is technically optional; only verify when present
   const claims = decodeIdTokenClaims(idToken);
   if (!claims) {
-    throw new Error("id_token could not be decoded — sign-in aborted.");
+    throw new Error("id_token could not be decoded - sign-in aborted.");
   }
 
   // Issuer must match the IdP host we authenticated against. Prevents an
@@ -94,13 +94,13 @@ function verifyIdTokenClaims(
       ? aud === QF_CLIENT_ID
       : Array.isArray(aud) && aud.includes(QF_CLIENT_ID);
   if (!audOk) {
-    throw new Error("id_token audience mismatch — sign-in aborted.");
+    throw new Error("id_token audience mismatch - sign-in aborted.");
   }
 
   // Expiry must be in the future. 60s skew allows for small clock drift
   // between our machine and the IdP.
   if (typeof claims.exp !== "number" || Date.now() / 1000 > claims.exp + 60) {
-    throw new Error("id_token has expired — sign-in aborted.");
+    throw new Error("id_token has expired - sign-in aborted.");
   }
 
   // Nonce must match the one we generated and stored in PKCE state. This
@@ -108,7 +108,7 @@ function verifyIdTokenClaims(
   // captured id_token from another session could bind here.
   if (claims.nonce !== expectedNonce) {
     throw new Error(
-      "id_token nonce mismatch — possible replay attack. Sign-in aborted."
+      "id_token nonce mismatch - possible replay attack. Sign-in aborted."
     );
   }
 }
@@ -147,11 +147,11 @@ export async function completeLogin(
 ): Promise<{ tokens: StoredTokens; returnTo: string }> {
   const pkce = loadPkce();
   if (!pkce) {
-    throw new Error("Missing PKCE state — start the login flow again.");
+    throw new Error("Missing PKCE state - start the login flow again.");
   }
   if (pkce.state !== state) {
     clearPkce();
-    throw new Error("State mismatch — possible CSRF attack. Login aborted.");
+    throw new Error("State mismatch - possible CSRF attack. Login aborted.");
   }
 
   // Once state is validated, the authorization code + code_verifier are
@@ -193,7 +193,7 @@ export async function completeLogin(
 
     const json: TokenResponse = await response.json();
     // Verify id_token claims before storing. If verification fails we
-    // throw from here — the finally {} clause clears PKCE so the same
+    // throw from here - the finally {} clause clears PKCE so the same
     // auth code can't be re-exchanged. Tokens never reach storage on
     // failure.
     verifyIdTokenClaims(json.id_token, pkce.nonce);
@@ -208,7 +208,7 @@ export async function completeLogin(
 // Single-flight gate + short-TTL result cache for refresh_token grants.
 // Hydra revokes the previous access token atomically on every refresh,
 // so two parallel refreshes from sibling API calls in the same tick
-// would rotate TWICE — the first caller ends up holding a revoked
+// would rotate TWICE - the first caller ends up holding a revoked
 // token. The gate collapses bursts: while one refresh is in flight,
 // every other caller awaits the same promise. After it settles, the
 // result is served from cache for a brief window to absorb late
@@ -270,19 +270,19 @@ async function doRefresh(): Promise<StoredTokens | null> {
           }).toString(),
         });
   } catch {
-    // Network/CORS/DNS failure — keep the existing tokens so the user
+    // Network/CORS/DNS failure - keep the existing tokens so the user
     // isn't logged out by a transient connectivity blip.
     return null;
   }
 
   if (response.status === 400 || response.status === 401) {
-    // Refresh token rejected — session is genuinely dead.
+    // Refresh token rejected - session is genuinely dead.
     clearTokens();
     return null;
   }
 
   if (!response.ok) {
-    // 5xx or other transient — leave tokens in place, caller surfaces error.
+    // 5xx or other transient - leave tokens in place, caller surfaces error.
     return null;
   }
 
@@ -304,7 +304,7 @@ export function logout(): void {
   // (Hydra's /oauth2/revoke requires client_secret_basic, so we can't
   // call it directly from the browser). Use sendBeacon rather than
   // fetch so the POST survives the page unload that immediately
-  // follows — sendBeacon is designed for exactly this pattern and
+  // follows - sendBeacon is designed for exactly this pattern and
   // preserves the Content-Type from the Blob so our proxy's JSON
   // parse still works. If sendBeacon isn't available (very old
   // browsers) we fall through; Hydra's session logout still happens,

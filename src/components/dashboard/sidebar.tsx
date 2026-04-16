@@ -19,6 +19,7 @@ const exploreViews: View[] = [
   { href: "/journeys", label: "Islamic Journeys", icon: "🕌" },
   { href: "/names", label: "Names of Allah", icon: "✨" },
   { href: "/sites", label: "Sacred Sites", icon: "🕋" },
+  { href: "/qibla", label: "Qibla", icon: "🧭" },
 ];
 
 const personalViews: View[] = [

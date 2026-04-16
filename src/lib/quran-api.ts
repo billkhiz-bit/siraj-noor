@@ -114,7 +114,7 @@ export async function fetchChapterInfo(chapterId: number): Promise<ChapterInfo |
   }
 }
 
-// Mishary Rashid al-Afasy (Murattal). Qur'an.com's default reciter —
+// Mishary Rashid al-Afasy (Murattal). Qur'an.com's default reciter -
 // distinctive, clear, widely recognised. id 7 per /recitations.
 const DEFAULT_RECITER_ID = 7;
 
@@ -124,10 +124,10 @@ export interface ChapterAudio {
   reciterId: number;
 }
 
-// Sayyid Abul A`la Maududi's English tafsir — a modern, readable
+// Sayyid Abul A`la Maududi's English tafsir - a modern, readable
 // commentary that sits well next to the Sahih International
 // translation. Qur'an.com tafsir id is 169. Switching to Ibn Kathir
-// (id 168 — "Ibn Kathir [Abridged English]" in the /quran/tafsirs
+// (id 168 - "Ibn Kathir [Abridged English]" in the /quran/tafsirs
 // list) is a one-line change if we ever expose a picker.
 const DEFAULT_TAFSIR_ID = 169;
 
@@ -135,7 +135,7 @@ export interface Tafsir {
   verseKey: string;
   name: string;
   language: string;
-  text: string; // HTML — may contain <p>, <br>, etc.
+  text: string; // HTML - may contain <p>, <br>, etc.
 }
 
 export async function fetchTafsir(

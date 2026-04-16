@@ -14,7 +14,7 @@ export function ReadingTracker({ chapterId }: ReadingTrackerProps) {
 
   // Track which chapters have been successfully recorded in this mount.
   // A plain ref (previously) set the id synchronously before the POST
-  // resolved — a failed POST would still block retry. Now we set the
+  // resolved - a failed POST would still block retry. Now we set the
   // id BEFORE the request to prevent double-fires across re-renders,
   // then roll it back on failure so a subsequent effect tick or a
   // remount can legitimately retry.

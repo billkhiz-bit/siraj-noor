@@ -1,15 +1,15 @@
-# Siraj Noor — Demo Video Beat Sheet
+# Siraj Noor - Demo Video Beat Sheet
 
 **Target:** 2:30 (hard cap 3:00)
 **For:** Provision Launch × Quran Foundation Hackathon judges
-**Format:** Bullet guide — hit the beats, talk naturally over the visuals
+**Format:** Bullet guide - hit the beats, talk naturally over the visuals
 **Status (2026-04-16):** Auth end-to-end green on prelive; recording any time this week is safe.
 
 ---
 
 ## Why this structure
 
-Impact is worth 30 points, the largest judging category. The first 60 seconds must prove this is a **Quran Foundation User API** consumer, not a content-only Qur'an viewer — that's the eligibility differentiator. OAuth flow + amber ring overlay go up front for that reason. Everything else is supporting evidence; cut from the bottom if running long.
+Impact is worth 30 points, the largest judging category. The first 60 seconds must prove this is a **Quran Foundation User API** consumer, not a content-only Qur'an viewer - that's the eligibility differentiator. OAuth flow + amber ring overlay go up front for that reason. Everything else is supporting evidence; cut from the bottom if running long.
 
 One thing the script does *not* make time for in-camera but worth having ready as a narrator aside if a scene lands short: the refresh-token flow is hardened with a single-flight gate so sibling providers (BookmarksProvider, CollectionsProvider, ReadingProgressProvider) can't cascade-revoke each other's access tokens on the initial page mount. It's the kind of detail that shows judges the integration is production-shaped, not a weekend prototype.
 
@@ -26,7 +26,7 @@ One thing the script does *not* make time for in-camera but worth having ready a
 - Siraj Noor lets you *see* it and *live inside it*
 
 **Caption lower-third**
-`Siraj Noor — a 3D Qur'an & Hadith companion`
+`Siraj Noor - a 3D Qur'an & Hadith companion`
 
 ---
 
@@ -35,10 +35,10 @@ One thing the script does *not* make time for in-camera but worth having ready a
 **Show**
 - Dashboard view, click `Sign in with Quran.com` in the Today Panel
 - Brief pause on `prelive-oauth2.quran.foundation` consent screen
-- Return to dashboard — user menu now shows signed-in state
+- Return to dashboard - user menu now shows signed-in state
 
 **Beats to hit**
-- OAuth 2.0 PKCE with a Cloudflare Pages Function token proxy — secret stays server-side, browser only ever holds the access + refresh tokens
+- OAuth 2.0 PKCE with a Cloudflare Pages Function token proxy - secret stays server-side, browser only ever holds the access + refresh tokens
 - Bookmarks, collections, reading sessions, reflections all live on your Quran Foundation account via the `/auth/v1/*` endpoints
 - "One tap, and everything personal follows me across devices"
 
@@ -52,9 +52,9 @@ One thing the script does *not* make time for in-camera but worth having ready a
 **Show**
 - Click a surah bar in the ring → `/surah/2` opens
 - Scroll to Ayat al-Kursi (2:255)
-- Click bookmark star — fills amber (optimistic UI)
+- Click bookmark star - fills amber (optimistic UI)
 - Cut to DevTools Network tab briefly: `POST /auth/v1/bookmarks` → 200 with the canonical `{key, verseNumber, type:"ayah", mushaf:4}` body
-- Navigate to `/bookmarks` — the saved verse is already there
+- Navigate to `/bookmarks` - the saved verse is already there
 
 **Beats to hit**
 - Bookmark any ayah from any of the ten views
@@ -71,10 +71,10 @@ One thing the script does *not* make time for in-camera but worth having ready a
 **Show**
 - Back to `/dashboard`
 - Today Panel at top: Ayah of the Day (Arabic + translation), streak, "n of 114 surahs visited"
-- Slow zoom on Surah Ring — the visited surah now glows amber with a pulsing ring at its base
+- Slow zoom on Surah Ring - the visited surah now glows amber with a pulsing ring at its base
 
 **Beats to hit**
-- The ring remembers — visited surahs glow amber
+- The ring remembers - visited surahs glow amber
 - Date-deterministic Ayah of the Day (same ayah for every user on the same UTC day)
 - Streak counter + mushaf coverage at a glance
 
@@ -83,19 +83,19 @@ One thing the script does *not* make time for in-camera but worth having ready a
 
 ---
 
-## Scene 5 · Activity 3D — the 10th view [1:20 → 1:50]
+## Scene 5 · Activity 3D - the 10th view [1:20 → 1:50]
 
 **Show**
 - Click `Activity` in sidebar (Personal section)
 - Let camera auto-rotate 5 seconds over the 7×52 heatmap
 - Today cell visibly pulses brighter than the rest
-- Hover a cell — tooltip with date + session count
+- Hover a cell - tooltip with date + session count
 - Cut to four stat cards (streak / longest / sessions / surahs visited)
 
 **Beats to hit**
 - Tenth view, built around `reading_session` scope
 - 365 days × 7 rows × session count → 3D bars, amber intensity = reading volume
-- Powered entirely by the Quran Foundation User API — no local storage, no fake data
+- Powered entirely by the Quran Foundation User API - no local storage, no fake data
 
 **Caption**
 `365 days · pure User API · 100% static export`
@@ -105,8 +105,8 @@ One thing the script does *not* make time for in-camera but worth having ready a
 ## Scene 6 · Collections + bookmarks list [1:50 → 2:10]
 
 **Show**
-- Click `Bookmarks` in sidebar — saved verses with Arabic text and translation
-- Click `Collections` — create one called "Ayahs that made me pause"
+- Click `Bookmarks` in sidebar - saved verses with Arabic text and translation
+- Click `Collections` - create one called "Ayahs that made me pause"
 - CSS-perspective shelf renders it as a tilting card
 
 **Beats to hit**
@@ -129,7 +129,7 @@ Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 - Names of Allah → 99-sphere with Allah at centre
 
 **Beats to hit**
-- The rest is pure exploration — hadith chains, revelation geography, sacred sites, 99 Names
+- The rest is pure exploration - hadith chains, revelation geography, sacred sites, 99 Names
 - Every visualisation is clickable
 - Every click is a new lens on scripture
 
@@ -165,16 +165,16 @@ Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 - [ ] Pre-seed 3–4 bookmarks across different surahs (Fatihah 1:1, Baqarah 2:255, Nur 24:35, Rahman 55:13 makes a visually varied demo ring)
 - [ ] Create 1–2 collections so Scene 6's shelf has cards already present, and create one live on camera for the beat
 - [ ] Hide browser bookmarks bar + extension icons
-- [ ] Fresh incognito window with cookies from a prior signed-in session preserved (or sign in cleanly if you want the OAuth flow on camera — recommended for Scene 2)
+- [ ] Fresh incognito window with cookies from a prior signed-in session preserved (or sign in cleanly if you want the OAuth flow on camera - recommended for Scene 2)
 - [ ] Dark mode forced off at OS level (the app forces dark on its own; OS-level light mode prevents dev-tool panels from appearing dark in any system-chrome shots)
 - [ ] Screen capture at 1920×1080, 60 fps (OBS or equivalent)
-- [ ] VO recorded separately, aligned in editor — do **not** record with system audio pickup
+- [ ] VO recorded separately, aligned in editor - do **not** record with system audio pickup
 - [ ] Export H.264, check Provision Launch file size limit before final upload
 
 **During recording**
 
 - [ ] Open DevTools Network tab filtered by `apis-prelive` **just before** Scene 2 and let it record silently in the background; useful to cut a 2-second insert shot in Scene 4 or 5 showing a live `200 OK` on `/auth/v1/bookmarks?mushafId=4&first=20` as proof the integration is real, not mocked.
-- [ ] Between scenes: if the app state drifts (phantom bookmarks, stale streak), hard-refresh rather than stop-start — providers remount on hard refresh and pull fresh state from the API.
+- [ ] Between scenes: if the app state drifts (phantom bookmarks, stale streak), hard-refresh rather than stop-start - providers remount on hard refresh and pull fresh state from the API.
 
 ---
 
@@ -191,6 +191,6 @@ Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 
 ## Scenes to *never* cut
 
-1. **Scene 2 (sign-in flow)** — this is the eligibility proof. Without it on camera, judges may assume it's a content-API-only app.
-2. **Scene 4 (ring overlay + Today panel)** — highest visual impact to time ratio. The amber ring read indicator is the single most memorable shot.
-3. **Scene 5 (Activity 3D)** — the differentiator that makes this a ten-view app instead of a nine-view app.
+1. **Scene 2 (sign-in flow)** - this is the eligibility proof. Without it on camera, judges may assume it's a content-API-only app.
+2. **Scene 4 (ring overlay + Today panel)** - highest visual impact to time ratio. The amber ring read indicator is the single most memorable shot.
+3. **Scene 5 (Activity 3D)** - the differentiator that makes this a ten-view app instead of a nine-view app.

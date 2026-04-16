@@ -1,6 +1,6 @@
 "use client";
 
-// Global error boundary — this is Next.js App Router's special file for
+// Global error boundary - this is Next.js App Router's special file for
 // catching errors in the root layout itself. `app/error.tsx` catches errors
 // in `page.tsx` components and their descendants, but it cannot catch
 // errors thrown in `layout.tsx` because `error.tsx` is mounted *inside*

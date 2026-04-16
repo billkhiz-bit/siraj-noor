@@ -1,4 +1,4 @@
-# Siraj Noor (سراج نور) — The Lamp of Light
+# Siraj Noor (سراج نور) - The Lamp of Light
 
 **Interactive 3D Qur'an & Hadith Data Visualisation + Personal Companion**
 
@@ -10,7 +10,7 @@ Built for the [Quran Foundation Hackathon 2026](https://hackathon.provisionlaunc
 
 ## What is Siraj Noor?
 
-Siraj Noor illuminates the structure, patterns, and geography of the Qur'an and Hadith through interactive 3D data visualisation — and now goes further by layering a personal companion experience on top. Bookmark ayahs from any 3D view, save them into collections, track your reading streak, and watch your reading progress light up the Surah Ring. All personal data is stored on your Quran Foundation account (via the User APIs) so it travels with you across devices.
+Siraj Noor illuminates the structure, patterns, and geography of the Qur'an and Hadith through interactive 3D data visualisation - and now goes further by layering a personal companion experience on top. Bookmark ayahs from any 3D view, save them into collections, track your reading streak, and watch your reading progress light up the Surah Ring. All personal data is stored on your Quran Foundation account (via the User APIs) so it travels with you across devices.
 
 Most Islamic apps focus on reading and listening. Siraj Noor lets you *see* the data **and** build a lasting relationship with what you've explored.
 
@@ -29,7 +29,7 @@ Most Islamic apps focus on reading and listening. Siraj Noor lets you *see* the 
 | **Islamic Journeys** | 10 historical routes from 615-632 CE with waypoints, key figures, and biographies. View all routes simultaneously or individually. |
 | **Names of Allah** | 99 Names arranged in a 3D sphere with Allah at the centre. Filter by Jamal (Beauty), Jalal (Majesty), or Kamal (Perfection). |
 | **Sacred Sites** | 5 wireframe 3D models of holy sites: Masjid al-Nabawi, Mount Uhud, Cave of Hira, Cave of Thawr, and the Plain of Arafat. Interactive annotations, particle overlays, elevation profiles, compass, and Qur'anic references. |
-| **Activity** *(new in Siraj Noor)* | Full-year 7×52 3D heatmap of your reading sessions. Every cell is a day, bar height and amber intensity represent session count. Powered by the Quran Foundation `reading_session` scope — no local storage, no fake data. |
+| **Activity** *(new in Siraj Noor)* | Full-year 7×52 3D heatmap of your reading sessions. Every cell is a day, bar height and amber intensity represent session count. Powered by the Quran Foundation `reading_session` scope - no local storage, no fake data. |
 
 ### Personal companion pages
 
@@ -48,7 +48,7 @@ Siraj is fully responsive across phones, tablets, and desktops. On mobile (<768p
 - Map overlays resize to fit smaller screens
 - Landing page stats wrap to multiple rows
 
-Desktop layout is unchanged — all responsive behaviour uses the `md:` Tailwind breakpoint.
+Desktop layout is unchanged - all responsive behaviour uses the `md:` Tailwind breakpoint.
 
 ## Data Accuracy
 
@@ -94,4 +94,4 @@ Open [http://localhost:3000](http://localhost:3000). Personal features require a
 
 ## Licence
 
-MIT — see the submission notes or LICENSE in the repository root.
+MIT - see the submission notes or LICENSE in the repository root.

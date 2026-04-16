@@ -1,77 +1,132 @@
 "use client";
 
-// Qibla compass — computes the great-circle initial bearing from the
-// user's geolocation to the Kaaba in Makkah (21.4225°N, 39.8262°E)
+// Qibla compass. Computes the great-circle initial bearing from the
+// user's geolocation to the Kaaba in Makkah (21.4225 N, 39.8262 E)
 // and renders an SVG compass pointing that way. Desktop users see a
 // static "N-up" compass; mobile users with DeviceOrientationEvent
 // support can opt in to live orientation so the arrow tracks their
 // physical direction.
 //
-// Geolocation prompt is opt-in — no silent permission grab on mount.
-// Distance shown in km alongside bearing for extra context.
+// Geolocation is opt-in (no silent permission grab on mount). If
+// a user has denied permission, they can still pick a city from a
+// preset list and get an accurate bearing without re-enabling the
+// geolocation API at the browser level.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const KAABA_LAT = 21.4225;
 const KAABA_LNG = 39.8262;
 const EARTH_RADIUS_KM = 6371;
 
-type Status = "idle" | "locating" | "ready" | "denied" | "error";
-
-interface UserLocation {
+interface LocationState {
+  label: string;
   lat: number;
   lng: number;
   bearing: number;
   distanceKm: number;
+  source: "geolocation" | "manual";
 }
+
+interface PresetCity {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+// A small set of major cities for users who can't or won't share
+// their location. Coverage is deliberately global: Mecca itself,
+// regional capitals in the Muslim world, plus the cities where
+// most app users are likely to live.
+const PRESET_CITIES: PresetCity[] = [
+  { label: "Makkah", lat: 21.4225, lng: 39.8262 },
+  { label: "Madinah", lat: 24.5247, lng: 39.5692 },
+  { label: "Istanbul", lat: 41.0082, lng: 28.9784 },
+  { label: "Cairo", lat: 30.0444, lng: 31.2357 },
+  { label: "Riyadh", lat: 24.7136, lng: 46.6753 },
+  { label: "Dubai", lat: 25.2048, lng: 55.2708 },
+  { label: "Karachi", lat: 24.8607, lng: 67.0011 },
+  { label: "Lahore", lat: 31.5204, lng: 74.3587 },
+  { label: "Jakarta", lat: -6.2088, lng: 106.8456 },
+  { label: "Kuala Lumpur", lat: 3.139, lng: 101.6869 },
+  { label: "London", lat: 51.5074, lng: -0.1278 },
+  { label: "New York", lat: 40.7128, lng: -74.006 },
+  { label: "Los Angeles", lat: 34.0522, lng: -118.2437 },
+  { label: "Toronto", lat: 43.6532, lng: -79.3832 },
+  { label: "Sydney", lat: -33.8688, lng: 151.2093 },
+  { label: "Paris", lat: 48.8566, lng: 2.3522 },
+  { label: "Berlin", lat: 52.52, lng: 13.405 },
+  { label: "Johannesburg", lat: -26.2041, lng: 28.0473 },
+];
+
+type Status = "idle" | "locating" | "ready" | "denied" | "error";
 
 function toRad(deg: number) {
   return (deg * Math.PI) / 180;
 }
-
 function toDeg(rad: number) {
   return (rad * 180) / Math.PI;
 }
 
 function computeBearing(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const φ1 = toRad(lat1);
-  const φ2 = toRad(lat2);
-  const Δλ = toRad(lng2 - lng1);
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x =
-    Math.cos(φ1) * Math.sin(φ2) -
-    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  const θ = Math.atan2(y, x);
-  return (toDeg(θ) + 360) % 360;
+  const p1 = toRad(lat1);
+  const p2 = toRad(lat2);
+  const dL = toRad(lng2 - lng1);
+  const y = Math.sin(dL) * Math.cos(p2);
+  const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dL);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-function computeDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-) {
-  const φ1 = toRad(lat1);
-  const φ2 = toRad(lat2);
-  const Δφ = toRad(lat2 - lat1);
-  const Δλ = toRad(lng2 - lng1);
-  const a =
-    Math.sin(Δφ / 2) ** 2 +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+function computeDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const p1 = toRad(lat1);
+  const p2 = toRad(lat2);
+  const dP = toRad(lat2 - lat1);
+  const dL = toRad(lng2 - lng1);
+  const a = Math.sin(dP / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dL / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return EARTH_RADIUS_KM * c;
 }
 
-export function QiblaCompass() {
-  const [status, setStatus] = useState<Status>("idle");
-  const [location, setLocation] = useState<UserLocation | null>(null);
-  const [deviceHeading, setDeviceHeading] = useState<number | null>(null);
+function buildLocation(
+  label: string,
+  lat: number,
+  lng: number,
+  source: LocationState["source"]
+): LocationState {
+  return {
+    label,
+    lat,
+    lng,
+    bearing: computeBearing(lat, lng, KAABA_LAT, KAABA_LNG),
+    distanceKm: computeDistance(lat, lng, KAABA_LAT, KAABA_LNG),
+    source,
+  };
+}
 
+interface QiblaCompassProps {
+  size?: "compact" | "large";
+}
+
+export function QiblaCompass({ size = "compact" }: QiblaCompassProps = {}) {
+  const [status, setStatus] = useState<Status>("idle");
+  const [location, setLocation] = useState<LocationState | null>(null);
+  const [deviceHeading, setDeviceHeading] = useState<number | null>(null);
+  const [orientationEnabled, setOrientationEnabled] = useState(false);
+
+  const compassDiameter = size === "large" ? 280 : 160;
+
+  // Query permission state once so we can show a friendlier "denied"
+  // hint on the idle screen without forcing a click.
   useEffect(() => {
-    if (deviceHeading === null) return;
-    // No cleanup needed — listener is attached by requestOrientation()
-    // handler and lives until page reload.
-  }, [deviceHeading]);
+    if (typeof navigator === "undefined" || !navigator.permissions) return;
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((result) => {
+        if (result.state === "denied") setStatus("denied");
+      })
+      .catch(() => {
+        /* Permissions API not supported, leave idle */
+      });
+  }, []);
 
   function requestLocation() {
     if (!navigator.geolocation) {
@@ -82,37 +137,32 @@ export function QiblaCompass() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        const bearing = computeBearing(latitude, longitude, KAABA_LAT, KAABA_LNG);
-        const distanceKm = computeDistance(
-          latitude,
-          longitude,
-          KAABA_LAT,
-          KAABA_LNG
+        setLocation(
+          buildLocation("Your location", latitude, longitude, "geolocation")
         );
-        setLocation({ lat: latitude, lng: longitude, bearing, distanceKm });
         setStatus("ready");
       },
       (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          setStatus("denied");
-        } else {
-          setStatus("error");
-        }
+        if (err.code === err.PERMISSION_DENIED) setStatus("denied");
+        else setStatus("error");
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
     );
   }
 
+  function pickCity(city: PresetCity) {
+    setLocation(buildLocation(city.label, city.lat, city.lng, "manual"));
+    setStatus("ready");
+  }
+
   async function requestOrientation() {
-    // iOS 13+ requires explicit permission via
-    // DeviceOrientationEvent.requestPermission(). Other browsers
-    // (Android Chrome, Safari desktop) can attach the listener
-    // directly. We accept either pathway.
-    const DeviceOrientationEventClass = (window as unknown as {
-      DeviceOrientationEvent?: {
-        requestPermission?: () => Promise<"granted" | "denied">;
-      };
-    }).DeviceOrientationEvent;
+    const DeviceOrientationEventClass = (
+      window as unknown as {
+        DeviceOrientationEvent?: {
+          requestPermission?: () => Promise<"granted" | "denied">;
+        };
+      }
+    ).DeviceOrientationEvent;
     if (!DeviceOrientationEventClass) return;
 
     if (typeof DeviceOrientationEventClass.requestPermission === "function") {
@@ -125,24 +175,20 @@ export function QiblaCompass() {
     }
 
     function handler(e: DeviceOrientationEvent) {
-      // Prefer webkitCompassHeading (iOS, absolute to true north)
-      // over alpha (relative to device initial orientation). alpha
-      // needs further correction to be useful; compassHeading is
-      // the pragmatic choice.
       const heading =
-        (e as unknown as { webkitCompassHeading?: number })
-          .webkitCompassHeading ?? e.alpha;
+        (e as unknown as { webkitCompassHeading?: number }).webkitCompassHeading ??
+        e.alpha;
       if (typeof heading === "number") setDeviceHeading(heading);
     }
     window.addEventListener("deviceorientation", handler, true);
+    setOrientationEnabled(true);
   }
 
-  // Rotate the needle opposite to the device heading so the arrow
-  // stays pointing at Makkah in real-world space.
-  const needleRotation =
-    location && deviceHeading !== null
-      ? location.bearing - deviceHeading
-      : location?.bearing ?? 0;
+  const needleRotation = useMemo(() => {
+    if (!location) return 0;
+    if (deviceHeading === null) return location.bearing;
+    return location.bearing - deviceHeading;
+  }, [location, deviceHeading]);
 
   return (
     <section
@@ -173,13 +219,24 @@ export function QiblaCompass() {
         )}
       </div>
 
+      {location && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          From{" "}
+          <span className="font-medium text-foreground">{location.label}</span>
+          {location.source === "manual" ? " (manual)" : ""}
+          {" · "}
+          {location.lat.toFixed(2)}°, {location.lng.toFixed(2)}°
+        </p>
+      )}
+
       <div className="flex items-center justify-center py-3">
-        <div className="relative h-40 w-40">
-          {/* Compass rose */}
+        <div
+          className="relative"
+          style={{ width: compassDiameter, height: compassDiameter }}
+        >
           <svg
             viewBox="-50 -50 100 100"
             className="h-full w-full"
-            aria-hidden={location ? "false" : "true"}
             role="img"
             aria-label={
               location
@@ -187,7 +244,6 @@ export function QiblaCompass() {
                 : "Qibla compass, awaiting location"
             }
           >
-            {/* Outer ring */}
             <circle
               cx="0"
               cy="0"
@@ -196,16 +252,15 @@ export function QiblaCompass() {
               stroke="rgba(148, 163, 184, 0.3)"
               strokeWidth="0.5"
             />
-            {/* Cardinal marks */}
             {[
               { angle: 0, label: "N", weight: true },
               { angle: 90, label: "E" },
               { angle: 180, label: "S" },
               { angle: 270, label: "W" },
             ].map((mark) => {
-              const θ = toRad(mark.angle - 90);
-              const x = Math.cos(θ) * 40;
-              const y = Math.sin(θ) * 40;
+              const t = toRad(mark.angle - 90);
+              const x = Math.cos(t) * 40;
+              const y = Math.sin(t) * 40;
               return (
                 <text
                   key={mark.label}
@@ -221,25 +276,23 @@ export function QiblaCompass() {
                 </text>
               );
             })}
-            {/* Minor tick marks every 15° */}
             {Array.from({ length: 24 }, (_, i) => {
               const angle = i * 15;
               const outer = 46;
               const inner = angle % 45 === 0 ? 42 : 44;
-              const θ = toRad(angle - 90);
+              const t = toRad(angle - 90);
               return (
                 <line
                   key={angle}
-                  x1={Math.cos(θ) * inner}
-                  y1={Math.sin(θ) * inner}
-                  x2={Math.cos(θ) * outer}
-                  y2={Math.sin(θ) * outer}
+                  x1={Math.cos(t) * inner}
+                  y1={Math.sin(t) * inner}
+                  x2={Math.cos(t) * outer}
+                  y2={Math.sin(t) * outer}
                   stroke="rgba(148, 163, 184, 0.35)"
                   strokeWidth="0.4"
                 />
               );
             })}
-            {/* Needle */}
             <g
               style={{
                 transform: `rotate(${needleRotation}deg)`,
@@ -257,7 +310,6 @@ export function QiblaCompass() {
                 <circle cx="0" cy="-42" r="2" fill="#fbbf24" opacity="0.8" />
               )}
             </g>
-            {/* Centre pin */}
             <circle
               cx="0"
               cy="0"
@@ -268,40 +320,92 @@ export function QiblaCompass() {
         </div>
       </div>
 
+      {/* Primary action / status row */}
       {status === "idle" && (
         <button
           type="button"
           onClick={requestLocation}
-          className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 text-xs font-semibold uppercase tracking-wider text-amber-400 transition-colors hover:bg-amber-500/20"
+          className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 text-xs font-semibold uppercase tracking-wider text-amber-400 transition-colors hover:bg-amber-500/20 md:h-10"
         >
-          Find the Qibla
+          Use my location
         </button>
       )}
       {status === "locating" && (
         <p className="mt-2 text-center text-xs text-muted-foreground">
-          Locating you…
-        </p>
-      )}
-      {status === "denied" && (
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          Location permission denied. The compass needs your coordinates to
-          compute a bearing.
+          Locating you...
         </p>
       )}
       {status === "error" && (
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          Couldn&apos;t read location. Try again from a secure (https) page.
+        <div className="mt-2 rounded-md border border-rose-500/30 bg-rose-500/5 p-3 text-center text-xs text-muted-foreground">
+          Couldn&apos;t read location. Try again, or pick a city below.
+          <button
+            type="button"
+            onClick={requestLocation}
+            className="ml-2 font-semibold text-amber-400 underline-offset-4 hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {status === "denied" && (
+        <div className="mt-2 rounded-md border border-amber-500/25 bg-amber-500/[0.04] p-3 text-xs text-muted-foreground">
+          <p className="mb-1 font-medium text-foreground">
+            Location access is off for this site.
+          </p>
+          <p>
+            To use your actual location, click the lock icon in your browser&apos;s
+            address bar, allow location, then{" "}
+            <button
+              type="button"
+              onClick={requestLocation}
+              className="font-semibold text-amber-400 underline-offset-4 hover:underline"
+            >
+              try again
+            </button>
+            . Or pick a city below for an accurate bearing right now.
+          </p>
+        </div>
+      )}
+
+      {/* Mobile orientation opt-in */}
+      {status === "ready" &&
+        location?.source === "geolocation" &&
+        !orientationEnabled && (
+          <button
+            type="button"
+            onClick={requestOrientation}
+            className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-md border border-border text-xs font-medium text-muted-foreground transition-colors hover:border-amber-500/40 hover:text-amber-400 md:hidden md:h-9"
+          >
+            Track device orientation
+          </button>
+        )}
+
+      {/* City picker fallback, always available */}
+      <div className="mt-4 border-t border-border pt-3">
+        <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          Or pick a city
         </p>
-      )}
-      {status === "ready" && deviceHeading === null && (
-        <button
-          type="button"
-          onClick={requestOrientation}
-          className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-md border border-border text-xs font-medium text-muted-foreground transition-colors hover:border-amber-500/40 hover:text-amber-400 md:hidden"
-        >
-          Track device orientation (mobile)
-        </button>
-      )}
+        <div className="flex flex-wrap gap-1.5">
+          {PRESET_CITIES.map((city) => {
+            const isActive = location?.label === city.label;
+            return (
+              <button
+                key={city.label}
+                type="button"
+                onClick={() => pickCity(city)}
+                aria-pressed={isActive}
+                className={`inline-flex h-8 items-center rounded-full border px-3 text-xs transition-colors ${
+                  isActive
+                    ? "border-amber-500/60 bg-amber-500/15 text-amber-300"
+                    : "border-border text-muted-foreground hover:border-amber-500/40 hover:text-amber-400"
+                }`}
+              >
+                {city.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }

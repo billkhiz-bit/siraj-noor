@@ -16,7 +16,7 @@ export const QF_API_BASE = `${QF_API_HOST}/auth/v1`;
 
 // Token exchange routing
 // QF issues confidential clients (client_secret_basic) by default, so the
-// browser cannot talk to the QF token endpoint directly — a client secret
+// browser cannot talk to the QF token endpoint directly - a client secret
 // would leak into the bundle. Token exchange and refresh are routed through
 // Cloudflare Pages Functions that hold the secret server-side. Set
 // NEXT_PUBLIC_QF_USE_DIRECT_TOKEN=true to bypass the proxy if QF ever

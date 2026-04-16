@@ -46,7 +46,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       console.error("[BookmarksProvider] load failed:", err);
       setError(
         err instanceof QfApiError && err.status === 401
-          ? "Sign-in session expired — sign in again."
+          ? "Sign-in session expired - sign in again."
           : "Couldn't load your bookmarks right now."
       );
     } finally {
@@ -75,7 +75,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       const existing = bookmarks.find((b) => b.verse_key === verseKey);
 
       if (existing) {
-        // Optimistic remove — functional update so concurrent toggles
+        // Optimistic remove - functional update so concurrent toggles
         // can't stomp each other's revert state.
         setBookmarks((current) => current.filter((b) => b.id !== existing.id));
         try {
@@ -106,7 +106,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           current.map((b) => (b.id === optimisticId ? created : b))
         );
       } catch {
-        // Remove only the optimistic placeholder — leave any other
+        // Remove only the optimistic placeholder - leave any other
         // in-flight or successful items untouched.
         setBookmarks((current) =>
           current.filter((b) => b.id !== optimisticId)

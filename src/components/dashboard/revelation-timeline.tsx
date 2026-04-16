@@ -2,14 +2,14 @@
 
 // Revelation timeline scrubber. Horizontal slider along the dashboard
 // showing all 114 surahs in chronological revelation order (not the
-// mushaf's canonical order — the order in which they were revealed
+// mushaf's canonical order - the order in which they were revealed
 // to the Prophet ﷺ between 610 and 632 CE). Dragging the playhead
 // visually spreads the reveal: each surah lights up in amber as it
 // crosses the playhead, and the Meccan-to-Medinan transition at
-// the Hijrah (revelation #88 in standard sequencing — just before
+// the Hijrah (revelation #88 in standard sequencing - just before
 // Al-Baqarah) shows as a colour shift from cyan to violet.
 //
-// Intentionally kept 2D and independent of the 3D Surah Ring —
+// Intentionally kept 2D and independent of the 3D Surah Ring -
 // modifying the ring's reveal state mid-scene was too risky this
 // close to submission. The scrubber communicates the same insight
 // standalone.

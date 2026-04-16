@@ -7,7 +7,7 @@
 // falls back to a download link elsewhere.
 //
 // Kept intentionally independent of the site's design system because
-// the image has to look good standalone — it's going to be seen
+// the image has to look good standalone - it's going to be seen
 // everywhere but on siraj-noor.pages.dev. Dark background, amber
 // accent, and the site's name at the bottom so recipients know
 // where it came from.
@@ -23,7 +23,7 @@ interface ShareVerseButtonProps {
 
 type Status = "idle" | "rendering" | "sharing" | "done" | "error";
 
-// Pure canvas drawing routine — call with an offscreen 2D context and
+// Pure canvas drawing routine - call with an offscreen 2D context and
 // the verse data. Returns when drawing is complete.
 async function drawVerse(
   ctx: CanvasRenderingContext2D,
@@ -56,7 +56,7 @@ async function drawVerse(
   ctx.textAlign = "right";
   ctx.fillText(data.verseKey, width - 56, 56);
 
-  // Arabic verse — centred vertically in the upper 60%, RTL
+  // Arabic verse - centred vertically in the upper 60%, RTL
   ctx.fillStyle = "#f8fafc";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -197,7 +197,7 @@ export function ShareVerseButton({
       const filename = `siraj-noor-${verseKey.replace(":", "-")}.png`;
       const file = new File([blob], filename, { type: "image/png" });
 
-      // Web Share API preferred — allows "send to Messages", "post to
+      // Web Share API preferred - allows "send to Messages", "post to
       // Telegram" etc. without a download step.
       if (
         typeof navigator.share === "function" &&
@@ -208,7 +208,7 @@ export function ShareVerseButton({
         try {
           await navigator.share({
             title: surahEnglish
-              ? `${surahEnglish} — ayah ${verseKey}`
+              ? `${surahEnglish} - ayah ${verseKey}`
               : `Ayah ${verseKey}`,
             text: translation ?? "",
             files: [file],
@@ -216,7 +216,7 @@ export function ShareVerseButton({
           setStatus("done");
           return;
         } catch {
-          // User cancelled or API rejected — fall through to download.
+          // User cancelled or API rejected - fall through to download.
         }
       }
 

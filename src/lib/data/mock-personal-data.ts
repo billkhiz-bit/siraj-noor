@@ -1,13 +1,13 @@
 // Mock preview data for the personal companion pages.
 //
 // Used on /bookmarks, /collections, and /activity when:
-//   1. The user is not signed in — gives them a visual preview of what the
+//   1. The user is not signed in - gives them a visual preview of what the
 //      feature looks like populated, before committing to OAuth.
-//   2. The user is signed in but the User API is returning an error — keeps
+//   2. The user is signed in but the User API is returning an error - keeps
 //      the page looking complete during transient issues (e.g. prelive
 //      sandbox outages) instead of showing a broken error banner.
 //
-// Sample verses are chosen for thematic depth, not randomness — each should
+// Sample verses are chosen for thematic depth, not randomness - each should
 // feel like an ayah a reflective reader might actually bookmark.
 
 import type { Bookmark, Collection, ReadingSession } from "@/lib/qf-user-api";
@@ -18,7 +18,7 @@ export interface StreakInfo {
 }
 
 // ─── Bookmarks ─────────────────────────────────────────────────────────
-// Each mock bookmark includes a note that acts as a personal reflection —
+// Each mock bookmark includes a note that acts as a personal reflection -
 // this doubles as a subtle demonstration of the reflections feature.
 
 export const MOCK_BOOKMARKS: Bookmark[] = [
@@ -26,7 +26,7 @@ export const MOCK_BOOKMARKS: Bookmark[] = [
     id: "mock-bookmark-1",
     verse_key: "2:255",
     created_at: "2026-04-12T08:15:00Z",
-    note: "Ayat al-Kursi — the verse I try to read before leaving the house.",
+    note: "Ayat al-Kursi - the verse I try to read before leaving the house.",
   },
   {
     id: "mock-bookmark-2",
@@ -154,14 +154,14 @@ export const MOCK_READING_SESSIONS: ReadingSession[] = [
   mockSession("ab", 74, 18),
 ];
 
-// Derived from MOCK_READING_SESSIONS — 14 unique days in the last 14, 23
+// Derived from MOCK_READING_SESSIONS - 14 unique days in the last 14, 23
 // in the last 60. Current streak starts counting from day 0 backwards.
 export const MOCK_STREAK: StreakInfo = {
   current: 9,
   longest: 31,
 };
 
-// Chapter IDs derived from MOCK_READING_SESSIONS — used by the surah ring
+// Chapter IDs derived from MOCK_READING_SESSIONS - used by the surah ring
 // to light up "read" surahs in preview mode.
 export const MOCK_READ_SURAHS: Set<number> = new Set(
   MOCK_READING_SESSIONS.map((s) => s.chapter_id).filter(

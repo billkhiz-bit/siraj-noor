@@ -19,7 +19,7 @@ export function TodayPanel() {
 
   // Signed-out visitors see a preview with mock stats so the landing
   // page looks alive. Signed-in-but-errored users now see their real
-  // (possibly stale) stats plus a visible warning — previously we
+  // (possibly stale) stats plus a visible warning - previously we
   // silently substituted mock data here, which meant a user whose
   // token had quietly expired saw a fake streak and wouldn't know
   // anything was wrong.
@@ -68,7 +68,7 @@ export function TodayPanel() {
       className="mb-6 grid gap-4 lg:grid-cols-3"
       aria-label="Today panel"
     >
-      {/* Daily ayah card — spans 2 cols */}
+      {/* Daily ayah card - spans 2 cols */}
       <div className="lg:col-span-2 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-card to-card p-5">
         <div className="mb-3 flex items-center justify-between">
           <div>
@@ -99,7 +99,7 @@ export function TodayPanel() {
           </>
         ) : verseError ? (
           <p className="text-sm text-muted-foreground">
-            Couldn&apos;t load today&apos;s ayah from Qur&apos;an.com — try
+            Couldn&apos;t load today&apos;s ayah from Qur&apos;an.com - try
             refreshing.
           </p>
         ) : (
@@ -111,7 +111,7 @@ export function TodayPanel() {
 
         <div className="mt-4 flex items-center justify-between text-xs">
           <span className="text-muted-foreground">
-            {surah ? `${surah.number}. ${surah.nameEnglish}` : "—"}
+            {surah ? `${surah.number}. ${surah.nameEnglish}` : "-"}
           </span>
           <Link
             href={`/surah/${daily.chapter}/#verse-${daily.verseKey}`}
@@ -136,7 +136,7 @@ export function TodayPanel() {
             </p>
             <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
               Sign in with Quran.com to track your streak, save ayahs, and pick
-              up where you left off — synced across devices.
+              up where you left off - synced across devices.
             </p>
             <button
               type="button"
@@ -175,7 +175,7 @@ export function TodayPanel() {
                 role="status"
                 className="mt-3 text-[10px] uppercase tracking-wider text-amber-500/70"
               >
-                Sync paused — last known state shown
+                Sync paused - last known state shown
               </p>
             )}
           </>

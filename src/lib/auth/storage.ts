@@ -23,7 +23,7 @@ function notifyTokenListeners(): void {
 }
 
 // Snapshot cache for useSyncExternalStore. React's reconciler compares
-// the result of getSnapshot by reference every render — if we return a
+// the result of getSnapshot by reference every render - if we return a
 // fresh object each call, React treats every call as a state change and
 // loops forever (React minified error #185, "Maximum update depth
 // exceeded"). We parse localStorage once, then re-use the cached object

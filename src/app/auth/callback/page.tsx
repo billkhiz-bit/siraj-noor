@@ -56,7 +56,7 @@ export default function AuthCallbackPage() {
         const { returnTo } = await completeLogin(code, stateParam);
         if (cancelled) return;
         refresh();
-        update({ status: "success", message: "Signed in — redirecting…" });
+        update({ status: "success", message: "Signed in - redirecting…" });
         // Defence-in-depth on returnTo: startsWith("/") blocks external
         // URLs; !startsWith("//") blocks protocol-relative bypasses;
         // the whitespace/control-char check blocks /\tevil, /\u0000…

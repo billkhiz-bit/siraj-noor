@@ -5,7 +5,7 @@
 // verse that anchors each root to somewhere readers know. Clicking
 // a root expands it to show the exemplar and link through to the
 // surah detail page. Pairs with the Word Frequency 3D sphere on
-// /words — the sphere shows individual words, this grid shows the
+// /words - the sphere shows individual words, this grid shows the
 // deeper morphological structure.
 
 import { useState } from "react";
@@ -37,7 +37,7 @@ export function RootExplorer() {
           The lexical spine of the Qur&apos;an
         </p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Arabic words are built from triliteral roots — three consonants that
+          Arabic words are built from triliteral roots - three consonants that
           bear the core meaning across every verb form and noun derived from
           them. The roots below recur most across the Qur&apos;anic text.
           Counts are from the Quranic Arabic Corpus.
@@ -111,7 +111,7 @@ export function RootExplorer() {
           </div>
           <p className="text-sm leading-relaxed text-foreground/85">
             <span className="font-mono text-xs text-amber-500/70 mr-2">
-              {selected.exemplar.verseKey} —
+              {selected.exemplar.verseKey} -
             </span>
             {selected.exemplar.reason}
           </p>

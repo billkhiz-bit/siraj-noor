@@ -14,7 +14,7 @@ import { surahs, meccanCount, medinanCount, totalAyat, type Surah } from "@/lib/
 const MAKKAH = { lat: 21.4225, lon: 39.8262 };
 const MADINAH = { lat: 24.4672, lon: 39.6112 };
 
-// Dark map style — no labels (CARTO Dark Matter, free, no API key)
+// Dark map style - no labels (CARTO Dark Matter, free, no API key)
 const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json";
 
 // Generate arc points between two coordinates

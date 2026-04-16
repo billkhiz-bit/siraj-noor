@@ -1,9 +1,9 @@
-// Cloudflare Pages Function — QF token exchange proxy
+// Cloudflare Pages Function - QF token exchange proxy
 //
 // Why this file exists: Quran Foundation registers API clients with
 // token_endpoint_auth_method=client_secret_basic by default, meaning the
 // token exchange requires an HTTP Basic auth header carrying a client
-// secret. Siraj Noor is a static SPA — we cannot ship a secret to the
+// secret. Siraj Noor is a static SPA - we cannot ship a secret to the
 // browser bundle. This proxy runs on the Cloudflare Pages edge, reads the
 // secret from runtime env, builds the Basic auth header, and forwards the
 // PKCE code exchange to QF on the user's behalf.
@@ -13,7 +13,7 @@
 // header, forwards, and streams the token response back to the browser
 // unchanged.
 
-// No import of PagesFunction — Cloudflare Pages recognises the onRequestPost
+// No import of PagesFunction - Cloudflare Pages recognises the onRequestPost
 // export by name, not by type, and importing PagesFunction<Env> pulls in
 // Cloudflare's Response type which conflicts with the DOM Response we use
 // throughout the Next.js project. Plain function signatures keep the two
@@ -40,7 +40,7 @@ const DEFAULT_TOKEN_ENDPOINT =
   "https://prelive-oauth2.quran.foundation/oauth2/token";
 
 // Allowlist of origins permitted to use this proxy. Without this check the
-// Pages Function is effectively an open OAuth relay — any site on the
+// Pages Function is effectively an open OAuth relay - any site on the
 // internet could POST a stolen PKCE code and have the confidential client
 // secret attached for them. Matched byte-for-byte against the request
 // Origin; requests with no Origin header are rejected.

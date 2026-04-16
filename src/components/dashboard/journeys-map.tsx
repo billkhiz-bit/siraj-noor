@@ -67,7 +67,7 @@ function WaypointMarker({
           }}
         />
 
-        {/* Label — always show for origin/destination, hover for others */}
+        {/* Label - always show for origin/destination, hover for others */}
         {(waypoint.isOrigin || waypoint.isDestination || isHovered) && (
           <div className="absolute -top-8 z-20 whitespace-nowrap text-center">
             <span

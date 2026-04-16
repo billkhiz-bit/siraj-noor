@@ -1,11 +1,11 @@
-// Cloudflare Pages Function — QF refresh token proxy
+// Cloudflare Pages Function - QF refresh token proxy
 //
 // Mirrors functions/api/qf/token.ts for the refresh_token grant. Same reason:
 // our client is confidential and we can't send client_secret from the
 // browser. This function holds the secret server-side and forwards refresh
 // requests to QF.
 
-// No PagesFunction import — see functions/api/qf/token.ts for rationale.
+// No PagesFunction import - see functions/api/qf/token.ts for rationale.
 
 interface Env {
   QF_CLIENT_ID: string;

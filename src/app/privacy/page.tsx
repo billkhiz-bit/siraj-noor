@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Siraj Noor",
+  title: "Privacy Policy - Siraj Noor",
   description:
     "How Siraj Noor handles your data, what is stored locally, and what is stored on your Quran Foundation account.",
 };
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
               Siraj Noor is an open-source (MIT-licensed), non-commercial
               3D Qur&apos;an and Hadith companion built by a single developer
               for the Quran Foundation Hackathon 2026. It runs entirely in
-              your browser as a static site — there is no Siraj Noor backend
+              your browser as a static site - there is no Siraj Noor backend
               that receives your data.
             </p>
           </section>
@@ -65,8 +65,8 @@ export default function PrivacyPage() {
               What is stored on your Quran Foundation account
             </h2>
             <p>
-              Any personal feature you use — bookmarks, collections, reading
-              sessions, streaks, and reflections — is sent directly from your
+              Any personal feature you use - bookmarks, collections, reading
+              sessions, streaks, and reflections - is sent directly from your
               browser to the Quran Foundation User API at{" "}
               <code className="font-mono text-amber-400">
                 apis.quran.foundation
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
             <p className="mt-2">
               To delete this data, revoke Siraj Noor&apos;s access from your
               Quran.com account settings or use the Quran Foundation account
-              deletion flow — that action removes everything Siraj Noor can
+              deletion flow - that action removes everything Siraj Noor can
               see about you.
             </p>
           </section>
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
               <li>
                 <strong>Quran.com API</strong> (
                 <code className="font-mono text-amber-400">api.quran.com</code>
-                ) — public, keyless content: verse text, translations,
+                ) - public, keyless content: verse text, translations,
                 transliteration. No authentication, no cookies.
               </li>
               <li>
@@ -99,25 +99,25 @@ export default function PrivacyPage() {
                 <code className="font-mono text-amber-400">
                   oauth2.quran.foundation
                 </code>
-                ) — sign-in and token refresh.
+                ) - sign-in and token refresh.
               </li>
               <li>
                 <strong>Quran Foundation User API</strong> (
                 <code className="font-mono text-amber-400">
                   apis.quran.foundation
                 </code>
-                ) — your personal data, as described above.
+                ) - your personal data, as described above.
               </li>
               <li>
                 <strong>Hadith API</strong> (fawazahmed0/hadith-api via
-                jsDelivr CDN) — public hadith text. No authentication.
+                jsDelivr CDN) - public hadith text. No authentication.
               </li>
               <li>
-                <strong>CARTO</strong> — dark-themed map tiles for the
+                <strong>CARTO</strong> - dark-themed map tiles for the
                 Revelation Map view. No authentication.
               </li>
               <li>
-                <strong>Cloudflare Pages</strong> — static hosting. Cloudflare
+                <strong>Cloudflare Pages</strong> - static hosting. Cloudflare
                 may log standard HTTP request metadata (IP, user agent, timestamp)
                 for abuse prevention, per their own privacy policy.
               </li>

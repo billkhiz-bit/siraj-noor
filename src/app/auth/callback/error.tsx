@@ -79,7 +79,7 @@ export default function AuthCallbackError({ error, reset }: ErrorProps) {
           <div>
             <dt className="text-muted-foreground/70">Callback query</dt>
             <dd className="mt-0.5 break-all text-foreground/80">
-              {search || "(empty — no code/state in URL)"}
+              {search || "(empty - no code/state in URL)"}
             </dd>
           </div>
         </dl>
