@@ -45,10 +45,22 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
       const data = await qfApi.listCollections();
       setCollections(data.collections ?? []);
     } catch (err) {
-      // Log the raw upstream detail to the console so it's available for
-      // debugging, but show a short, user-friendly message in the UI
-      // (the raw 403 JSON body is unpleasant to look at on every sign-in).
+      // Log the raw upstream detail to the console so it's available
+      // for debugging. The user-facing message stays short, but the
+      // raw QfApiError message (which includes status + body preview
+      // for shape drift and auth failures) is preserved in the log
+      // so devtools inspection during hackathon testing shows the
+      // actual cause, not just the "Couldn't reach QF" banner.
       console.error("[CollectionsProvider] load failed:", err);
+      if (err instanceof QfApiError) {
+        console.error(
+          "[CollectionsProvider] QfApiError details:",
+          "status=",
+          err.status,
+          "message=",
+          err.message
+        );
+      }
       setError(
         err instanceof QfApiError && err.status === 401
           ? "Sign-in session expired - sign in again."

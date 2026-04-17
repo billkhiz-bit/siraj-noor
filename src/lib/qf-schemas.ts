@@ -41,17 +41,25 @@ const paginationSchema = z.object({
   hasPreviousPage: z.boolean().optional(),
 });
 
+// Envelope factories. `data` is required because every caller needs
+// it (we can't render a list we don't have), but `success` and
+// `pagination` are marked optional because the QF OpenAPI lists no
+// required fields at the envelope level. Some list responses omit
+// pagination entirely when the list is empty or when the endpoint
+// doesn't support cursor paging; other responses omit the success
+// flag on cached or proxied hops. Either omission used to trip the
+// whole envelope validation and cascade to the mock-data fallback.
 export function listEnvelope<T extends z.ZodTypeAny>(item: T) {
   return z.object({
-    success: z.boolean(),
+    success: z.boolean().optional(),
     data: z.array(item),
-    pagination: paginationSchema,
+    pagination: paginationSchema.optional(),
   });
 }
 
 export function singleEnvelope<T extends z.ZodTypeAny>(data: T) {
   return z.object({
-    success: z.boolean(),
+    success: z.boolean().optional(),
     data,
   });
 }

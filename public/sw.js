@@ -16,7 +16,12 @@
 // whose name doesn't match, so the previous version is garbage-collected
 // on the first activation after deploy.
 
-const CACHE_VERSION = "v1";
+// Bumped to v2 after the Zod schema fixes so service worker users
+// that have the old bundle cached get a fresh app shell on next
+// visit. The activate handler below deletes any cache whose name
+// doesn't match CACHE_NAME, so the old v1 cache is garbage-
+// collected on first activation after deploy.
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `siraj-noor-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
