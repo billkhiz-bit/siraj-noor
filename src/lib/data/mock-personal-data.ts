@@ -168,3 +168,13 @@ export const MOCK_READ_SURAHS: Set<number> = new Set(
     (id): id is number => typeof id === "number"
   )
 );
+
+// ─── Daily goal preview ────────────────────────────────────────────────
+// Shown to signed-out visitors so the goal card isn't empty on the
+// landing page. 60% progress on a 10-minute target shows both "a real
+// goal exists" and "there's still room to grow today", which reads
+// better than either 0% or 100%.
+export const MOCK_GOAL = {
+  targetSeconds: 600,
+  progress: 0.6,
+};

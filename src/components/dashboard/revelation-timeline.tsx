@@ -18,6 +18,20 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { surahs, type Surah } from "@/lib/data/surahs";
 
+// Playback speed presets. 1x = ~18 seconds for the full 114-surah
+// sweep (160ms per surah). 0.5x gives you space to read each
+// revelation's name; 4x is useful for a quick re-scrub or as a
+// time-lapse demo on a video. Milliseconds per step are rounded
+// to whole numbers so the RAF scheduling stays predictable.
+const PLAYBACK_SPEEDS = [
+  { label: "0.5×", value: 0.5, msPerStep: 320 },
+  { label: "1×", value: 1, msPerStep: 160 },
+  { label: "2×", value: 2, msPerStep: 80 },
+  { label: "4×", value: 4, msPerStep: 40 },
+] as const;
+
+type PlaybackSpeed = (typeof PLAYBACK_SPEEDS)[number]["value"];
+
 function classify(
   surah: Surah,
   revealedCount: number,
@@ -36,7 +50,12 @@ export function RevelationTimeline() {
   );
   const [playheadIdx, setPlayheadIdx] = useState(ordered.length - 1); // default: everything revealed
   const [autoPlaying, setAutoPlaying] = useState(false);
+  const [speed, setSpeed] = useState<PlaybackSpeed>(1);
   const rafRef = useRef<number | null>(null);
+  // Kept in sync with speed state so the RAF loop reads the latest
+  // value without having to be torn down and restarted when the
+  // user changes speed mid-playback.
+  const speedRef = useRef<PlaybackSpeed>(1);
 
   const revealedCount = playheadIdx + 1;
   const current = ordered[playheadIdx];
@@ -60,8 +79,13 @@ export function RevelationTimeline() {
     let last = performance.now();
     const step = (now: number) => {
       const elapsed = now - last;
-      // ~1 surah per 160ms so the whole 114-surah sweep takes about 18s
-      if (elapsed >= 160) {
+      // Interval scales with playback speed. Reading speedRef.current
+      // at each tick means in-flight speed changes take effect on the
+      // next frame without resetting the animation.
+      const currentMsPerStep =
+        PLAYBACK_SPEEDS.find((s) => s.value === speedRef.current)?.msPerStep ??
+        160;
+      if (elapsed >= currentMsPerStep) {
         last = now;
         setPlayheadIdx((prev) => {
           const next = prev + 1;
@@ -78,6 +102,11 @@ export function RevelationTimeline() {
       }
     };
     rafRef.current = requestAnimationFrame(step);
+  }
+
+  function handleSpeedChange(next: PlaybackSpeed) {
+    setSpeed(next);
+    speedRef.current = next;
   }
 
   return (
@@ -98,16 +127,43 @@ export function RevelationTimeline() {
             marks the Hijrah, after which the Medinan surahs begin.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={playPause}
-          aria-label={
-            autoPlaying ? "Pause timeline sweep" : "Play timeline sweep"
-          }
-          className="inline-flex h-11 items-center rounded-md border border-amber-500/40 bg-amber-500/10 px-4 text-xs font-semibold uppercase tracking-wider text-amber-400 transition-colors hover:bg-amber-500/20 md:h-9"
-        >
-          {autoPlaying ? "Pause" : "Play"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            role="group"
+            aria-label="Playback speed"
+            className="flex items-center rounded-md border border-border bg-card/60 p-0.5"
+          >
+            {PLAYBACK_SPEEDS.map((preset) => {
+              const isActive = speed === preset.value;
+              return (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => handleSpeedChange(preset.value)}
+                  aria-pressed={isActive}
+                  aria-label={`Set playback speed to ${preset.label}`}
+                  className={`inline-flex h-10 min-w-[44px] items-center justify-center rounded-sm px-2 font-mono text-xs font-medium transition-colors md:h-8 ${
+                    isActive
+                      ? "bg-amber-500/20 text-amber-300"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={playPause}
+            aria-label={
+              autoPlaying ? "Pause timeline sweep" : "Play timeline sweep"
+            }
+            className="inline-flex h-11 items-center rounded-md border border-amber-500/40 bg-amber-500/10 px-4 text-xs font-semibold uppercase tracking-wider text-amber-400 transition-colors hover:bg-amber-500/20 md:h-9"
+          >
+            {autoPlaying ? "Pause" : "Play"}
+          </button>
+        </div>
       </div>
 
       {/* Current surah callout */}

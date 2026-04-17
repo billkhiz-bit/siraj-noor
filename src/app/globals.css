@@ -126,6 +126,19 @@
   }
   html {
     @apply font-sans;
+    /*
+     * Smooth scroll for anchor jumps (e.g. /surah/2/#verse-2:144 from
+     * the qibla page) and programmatic scrollTo calls like the
+     * back-to-top button. The prefers-reduced-motion media query
+     * below honours users who've opted out at the OS level.
+     */
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   /*

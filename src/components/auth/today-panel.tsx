@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useReadingProgress } from "@/lib/auth/reading-progress-context";
+import { DailyGoalCard } from "@/components/auth/daily-goal-card";
 import { pickDailyAyah } from "@/lib/daily-ayah";
 import { fetchVerseByKey, type Verse } from "@/lib/quran-api";
 import { surahs } from "@/lib/data/surahs";
@@ -163,6 +164,9 @@ export function TodayPanel() {
                   Longest: {streak.longest} days
                 </p>
               )}
+            </div>
+            <div className="mb-3">
+              <DailyGoalCard variant="sidebar" />
             </div>
             <div className="border-t border-border pt-3 text-xs text-muted-foreground">
               <span className="font-mono text-foreground">

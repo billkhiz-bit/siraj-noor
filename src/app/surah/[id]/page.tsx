@@ -6,6 +6,7 @@ import { ChapterAudioPlayer } from "@/components/dashboard/chapter-audio-player"
 import { VerseRow } from "@/components/dashboard/verse-row";
 import { VerseProgressIndicator } from "@/components/dashboard/verse-progress-indicator";
 import { ReadingTracker } from "@/components/auth/reading-tracker";
+import { BackToTop } from "@/components/dashboard/back-to-top";
 import { Badge } from "@/components/ui/badge";
 import { surahs } from "@/lib/data/surahs";
 import { fetchAllVerses, fetchChapterInfo } from "@/lib/quran-api";
@@ -36,8 +37,12 @@ export default async function SurahDetailPage({
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar />
-      <ReadingTracker chapterId={surah.number} />
-      <main className="flex-1 overflow-y-auto">
+      <ReadingTracker chapterId={surah.number} ayatCount={surah.ayatCount} />
+      <BackToTop containerSelector="main[data-scroll-container]" />
+      <main
+        data-scroll-container
+        className="flex-1 overflow-y-auto scroll-smooth"
+      >
         <div className="mx-auto max-w-6xl px-4 pb-8 pt-16 md:px-6 md:py-8">
           {/* Back link */}
           <Link

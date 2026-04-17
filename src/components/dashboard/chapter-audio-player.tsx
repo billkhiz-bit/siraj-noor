@@ -27,6 +27,10 @@ export function ChapterAudioPlayer({
 
   useEffect(() => {
     let cancelled = false;
+    // Reset to loading when chapterId changes so the UI doesn't flash the
+    // previous surah's player during the fetch transition. setState-in-effect
+    // is intentional here; the async .then() paths aren't flagged by the rule.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus("loading");
     fetchChapterAudio(chapterId)
       .then((result) => {

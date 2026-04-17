@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { Loading3DScene } from "@/components/dashboard/loading-skeleton";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useReadingProgress } from "@/lib/auth/reading-progress-context";
+import { DailyGoalCard } from "@/components/auth/daily-goal-card";
 import { surahs } from "@/lib/data/surahs";
 import type { ReadingSession } from "@/lib/qf-user-api";
 import {
@@ -198,6 +199,10 @@ export default function ActivityPage() {
                   mushaf
                 </p>
               </div>
+            </div>
+
+            <div className="mb-6">
+              <DailyGoalCard variant="banner" />
             </div>
 
             <Activity3D

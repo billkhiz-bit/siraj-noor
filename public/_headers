@@ -22,7 +22,12 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), usb=(), payment=()
+  # geolocation=(self) permits the qibla compass to read the user's
+  # location when they tap "Use my location". An empty allowlist
+  # blocks geolocation for the site itself as well as third parties,
+  # which silently fails the qibla flow even when the OS grants
+  # permission.
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self), usb=(), payment=()
   # Content-Security-Policy intentionally omitted - needs report-only
   # pass against the live bundle to confirm every allowed host before
   # re-enabling. Clickjacking is already covered by X-Frame-Options:
