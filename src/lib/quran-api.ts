@@ -124,11 +124,11 @@ export interface ChapterAudio {
   reciterId: number;
 }
 
-// Sayyid Abul A`la Maududi's English tafsir - a modern, readable
-// commentary that sits well next to the Sahih International
-// translation. Qur'an.com tafsir id is 169. Switching to Ibn Kathir
-// (id 168 - "Ibn Kathir [Abridged English]" in the /quran/tafsirs
-// list) is a one-line change if we ever expose a picker.
+// Default tafsir is Ibn Kathir (Abridged, English), id 169. Verified
+// against api.quran.com/api/v4/resources/tafsirs?language=en. The
+// picker in the TafsirPanel lets the user switch between this,
+// Ma'arif al-Qur'an (168), and Tazkirul Quran (817). Full preset
+// list and localStorage persistence live in lib/tafsir-presets.ts.
 const DEFAULT_TAFSIR_ID = 169;
 
 export interface Tafsir {

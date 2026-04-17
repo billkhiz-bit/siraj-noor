@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <radialGradient id="og-bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0a0a1a" />
+      <stop offset="100%" stop-color="#030308" />
+    </radialGradient>
+    <radialGradient id="og-core" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fef3c7" />
+      <stop offset="35%" stop-color="#fbbf24" />
+      <stop offset="75%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" stop-opacity="0.2" />
+    </radialGradient>
+    <linearGradient id="og-text" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#og-bg)" />
+
+  <!-- Amber lamp on the left -->
+  <g transform="translate(220, 315)">
+    <circle cx="0" cy="0" r="180" fill="none" stroke="#f59e0b" stroke-opacity="0.12" stroke-width="2" />
+    <circle cx="0" cy="0" r="145" fill="none" stroke="#f59e0b" stroke-opacity="0.2" stroke-width="2" />
+    <circle cx="0" cy="0" r="108" fill="none" stroke="#f59e0b" stroke-opacity="0.32" stroke-width="2" />
+    <circle cx="0" cy="0" r="78" fill="url(#og-core)" />
+    <circle cx="0" cy="0" r="22" fill="#fffbeb" />
+  </g>
+
+  <!-- Right side: title + tagline -->
+  <g transform="translate(460, 245)">
+    <text x="0" y="0" fill="url(#og-text)" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" letter-spacing="-2">Siraj Noor</text>
+    <text x="0" y="60" fill="#cbd5e1" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-style="italic">سراج نور</text>
+    <text x="0" y="128" fill="#e2e8f0" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="400">3D Qur'an &amp; Hadith companion,</text>
+    <text x="0" y="168" fill="#e2e8f0" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="400">powered by Quran Foundation.</text>
+
+    <!-- Meta chips -->
+    <g transform="translate(0, 220)" font-family="ui-monospace, 'Cascadia Code', monospace" font-size="16" font-weight="500">
+      <g fill="#f59e0b" fill-opacity="0.15" stroke="#f59e0b" stroke-opacity="0.4">
+        <rect x="0" y="0" rx="14" ry="14" width="150" height="28" />
+        <rect x="162" y="0" rx="14" ry="14" width="186" height="28" />
+        <rect x="360" y="0" rx="14" ry="14" width="170" height="28" />
+      </g>
+      <g fill="#f59e0b">
+        <text x="75" y="19" text-anchor="middle">10 3D VIEWS</text>
+        <text x="255" y="19" text-anchor="middle">OAUTH + BOOKMARKS</text>
+        <text x="445" y="19" text-anchor="middle">OFFLINE PWA</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Subtle constellation dots for atmosphere -->
+  <g fill="#f59e0b" fill-opacity="0.4">
+    <circle cx="90" cy="80" r="1.5" />
+    <circle cx="150" cy="130" r="1" />
+    <circle cx="1050" cy="120" r="2" />
+    <circle cx="1120" cy="80" r="1.5" />
+    <circle cx="1150" cy="170" r="1" />
+    <circle cx="80" cy="540" r="1" />
+    <circle cx="160" cy="580" r="1.5" />
+    <circle cx="1080" cy="540" r="1" />
+    <circle cx="1130" cy="490" r="1.5" />
+    <circle cx="940" cy="590" r="1" />
+  </g>
+</svg>

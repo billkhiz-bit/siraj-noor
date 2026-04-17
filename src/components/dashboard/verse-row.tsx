@@ -13,7 +13,6 @@ import {
 } from "@/components/dashboard/tafsir-button";
 import { ShareVerseButton } from "@/components/dashboard/share-verse-button";
 import type { Verse } from "@/lib/quran-api";
-import type { Tafsir } from "@/lib/quran-api";
 import { getHadithForVerse } from "@/lib/data/hadith-by-verse";
 
 interface VerseRowProps {
@@ -23,8 +22,6 @@ interface VerseRowProps {
 
 export function VerseRow({ verse, surahEnglish }: VerseRowProps) {
   const [tafsirOpen, setTafsirOpen] = useState(false);
-  const [tafsir, setTafsir] = useState<Tafsir | null>(null);
-  const [fetchAttempted, setFetchAttempted] = useState(false);
   const hadiths = getHadithForVerse(verse.verse_key);
 
   return (
@@ -62,10 +59,6 @@ export function VerseRow({ verse, surahEnglish }: VerseRowProps) {
             verseKey={verse.verse_key}
             open={tafsirOpen}
             onToggle={() => setTafsirOpen((prev) => !prev)}
-            onTafsirLoaded={(t) => {
-              setTafsir(t);
-              setFetchAttempted(true);
-            }}
           />
           <ShareVerseButton
             verseKey={verse.verse_key}
@@ -75,13 +68,7 @@ export function VerseRow({ verse, surahEnglish }: VerseRowProps) {
           />
         </div>
       </div>
-      {tafsirOpen && (
-        <TafsirPanel
-          verseKey={verse.verse_key}
-          tafsir={tafsir}
-          loading={!fetchAttempted}
-        />
-      )}
+      {tafsirOpen && <TafsirPanel verseKey={verse.verse_key} />}
       {hadiths.length > 0 && (
         <aside className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.03] p-4">
           <div className="mb-2 flex items-center gap-2 text-xs">
