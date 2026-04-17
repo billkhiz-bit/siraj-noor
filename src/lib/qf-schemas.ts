@@ -29,11 +29,16 @@ import { z } from "zod";
 //     there is no chance of the runtime check and the compile-time
 //     type going out of sync.
 
+// Pagination envelope. The QF OpenAPI doesn't mark any of these
+// fields as required, and in practice empty-list responses can omit
+// cursors entirely rather than sending null. Every field is
+// therefore optional + nullable to avoid the list endpoints hitting
+// a validation failure when the user has zero items yet.
 const paginationSchema = z.object({
-  startCursor: z.string().nullable(),
-  endCursor: z.string().nullable(),
-  hasNextPage: z.boolean(),
-  hasPreviousPage: z.boolean(),
+  startCursor: z.string().nullable().optional(),
+  endCursor: z.string().nullable().optional(),
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
 });
 
 export function listEnvelope<T extends z.ZodTypeAny>(item: T) {
@@ -58,7 +63,10 @@ export const qfBookmarkSchema = z.object({
   createdAt: z.string(),
   type: z.string(),
   key: z.number(),
-  verseNumber: z.number().nullable(),
+  // verseNumber is optional AND nullable per the QF schema. Surah-
+  // level bookmarks (type !== "ayah") omit it entirely, and ayah
+  // bookmarks with unusual metadata may send it as null.
+  verseNumber: z.number().nullable().optional(),
   group: z.string().optional(),
   isInDefaultCollection: z.boolean().optional(),
   isReading: z.boolean().nullable().optional(),
@@ -74,8 +82,12 @@ export const qfCollectionSchema = z.object({
 export const qfReadingSessionSchema = z.object({
   id: z.string(),
   updatedAt: z.string(),
-  chapterNumber: z.number(),
-  verseNumber: z.number(),
+  // chapterNumber and verseNumber are optional per the QF schema.
+  // The only fields QF guarantees on every ReadingSession item are
+  // id and updatedAt; positional data is populated when the session
+  // was logged with explicit verse info but can be absent.
+  chapterNumber: z.number().optional(),
+  verseNumber: z.number().optional(),
 });
 
 // get-todays-plan is deliberately permissive. The `hasGoal` field is

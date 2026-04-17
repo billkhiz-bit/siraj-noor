@@ -238,10 +238,19 @@ function toCollection(q: QfCollection): Collection {
 }
 
 function toReadingSession(q: QfReadingSession): ReadingSession {
+  // chapterNumber and verseNumber are optional in the QF response.
+  // Falling back to undefined when either is missing keeps the
+  // internal ReadingSession shape honest rather than emitting a
+  // "undefined:undefined" verse_key string that would leak into
+  // the UI as broken labels.
+  const verse_key =
+    q.chapterNumber !== undefined && q.verseNumber !== undefined
+      ? `${q.chapterNumber}:${q.verseNumber}`
+      : undefined;
   return {
     id: q.id,
     chapter_id: q.chapterNumber,
-    verse_key: `${q.chapterNumber}:${q.verseNumber}`,
+    verse_key,
     created_at: q.updatedAt,
   };
 }
