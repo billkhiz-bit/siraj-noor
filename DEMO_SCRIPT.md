@@ -1,9 +1,9 @@
 # Siraj Noor - Demo Video Beat Sheet
 
-**Target:** 2:30 (hard cap 3:00)
+**Target:** 2:45 (hard cap 3:00)
 **For:** Provision Launch × Quran Foundation Hackathon judges
 **Format:** Bullet guide - hit the beats, talk naturally over the visuals
-**Status (2026-04-16):** Auth end-to-end green on prelive; recording any time this week is safe.
+**Status (2026-04-17):** Auth end-to-end green on prelive. Goals API, activity-day logging, PWA install, tafsir picker, streak-at-risk banner, and surah-of-the-day all live on production. Ready to record.
 
 ---
 
@@ -66,34 +66,56 @@ One thing the script does *not* make time for in-camera but worth having ready a
 
 ---
 
-## Scene 4 · Ring overlay + Today panel [0:55 → 1:20]
+## Scene 4 · Dashboard anchors + daily goal [0:55 → 1:25]
 
 **Show**
 - Back to `/dashboard`
-- Today Panel at top: Ayah of the Day (Arabic + translation), streak, "n of 114 surahs visited"
-- Slow zoom on Surah Ring - the visited surah now glows amber with a pulsing ring at its base
+- Today Panel at top: Ayah of the Day (Arabic + translation). Right column: Current streak counter, **Daily goal card** with preset buttons (5 / 10 / 15 / 30 min)
+- Click `10 min` - the buttons flip to a progress bar showing "0 min / 10 min"
+- Scroll a touch: Surah of the Day card (today's deterministic pick)
+- Slow zoom on Surah Ring - visited surahs glow amber with a pulsing ring at the base
 
 **Beats to hit**
+- Tap a preset to set today's reading target - persists to your QF account via the `goal` scope
+- Deterministic Surah of the Day + Ayah of the Day anchor returning visitors
+- Streak counter + mushaf coverage + goal progress all at a glance
 - The ring remembers - visited surahs glow amber
-- Date-deterministic Ayah of the Day (same ayah for every user on the same UTC day)
-- Streak counter + mushaf coverage at a glance
+- Narrator aside (optional): "If you haven't read in 20+ hours, a streak-at-risk banner will sit at the top of this dashboard. Gentle urgency without a push notification permission prompt."
 
 **Caption**
-`Content API: /verses/by_key  ·  User API: reading_session + streak`
+`User API: goal + reading_session + streak  ·  deterministic daily pickers`
 
 ---
 
-## Scene 5 · Activity 3D - the 10th view [1:20 → 1:50]
+## Scene 5 · Read a surah, progress fills [1:25 → 1:55]
+
+**Show**
+- Click a surah bar in the ring - `/surah/1` (Al-Fatihah) or similar short surah opens
+- Scroll a couple of ayahs, let ~20 seconds of dwell time elapse on camera (shorten in post if needed)
+- **Aside (3s)**: click the commentary icon on an ayah. Tafsir panel opens with a three-chip picker (Ibn Kathir / Ma'arif / Tazkirul). Tap Ma'arif - body re-fetches instantly, typography lands in a readable serif.
+- Click back to `/dashboard`
+- Cut to the Daily Goal card - progress bar has moved from 0 to roughly 20% (server-tracked, not simulated)
+
+**Beats to hit**
+- Reading the surah fires `POST /reading-sessions` (drives the heatmap + streak) AND `POST /activity-days` (drives QURAN_TIME goal progress). Two distinct signals, two distinct User API endpoints.
+- Periodic 30-second flushes on the surah page plus a keepalive-enabled final flush on navigation. Progress updates while you're reading, not only when you navigate away.
+- Tafsir picker ships three scholars (Ibn Kathir 169, Ma'arif al-Qur'an 168, Tazkirul Quran 817) via QF's Content API tafsirs endpoint. Choice persists in localStorage so the next verse remembers.
+
+**Caption**
+`User API: reading_session + activity_days + goal  ·  Content API: tafsirs × 3`
+
+---
+
+## Scene 6 · Activity 3D - the 10th view [1:55 → 2:20]
 
 **Show**
 - Click `Activity` in sidebar (Personal section)
 - Let camera auto-rotate 5 seconds over the 7×52 heatmap
 - Today cell visibly pulses brighter than the rest
-- Hover a cell - tooltip with date + session count
-- Cut to four stat cards (streak / longest / sessions / surahs visited)
+- Daily Goal banner above the heatmap shows the updated progress from Scene 5
 
 **Beats to hit**
-- Tenth view, built around `reading_session` scope
+- Tenth view, built around `reading_session` + `activity-days` scopes
 - 365 days × 7 rows × session count → 3D bars, amber intensity = reading volume
 - Powered entirely by the Quran Foundation User API - no local storage, no fake data
 
@@ -102,24 +124,26 @@ One thing the script does *not* make time for in-camera but worth having ready a
 
 ---
 
-## Scene 6 · Collections + bookmarks list [1:50 → 2:10]
+## Scene 7 · Collections + install as a PWA [2:20 → 2:40]
 
 **Show**
-- Click `Bookmarks` in sidebar - saved verses with Arabic text and translation
-- Click `Collections` - create one called "Ayahs that made me pause"
-- CSS-perspective shelf renders it as a tilting card
+- Quick cut: `Bookmarks` sidebar link - saved verses with Arabic text and translation
+- Cut to `Collections` - create one called "Ayahs that made me pause"; CSS-perspective shelf renders it as a tilting card
+- Address bar: Chrome's install icon appears. Click it. OS install dialog → confirm
+- Cut to the installed standalone window launching - **no URL bar, no tabs**, amber lamp icon in the taskbar / dock
+- 1-second shot: navigate inside the installed app. It feels native.
 
 **Beats to hit**
-- Dedicated list view for bookmarks
-- Collections = visual shelf, groupable by theme
-- All of it synced via the `collection` scope
+- Bookmarks + collections synced via the `bookmark` + `collection` scopes
+- Install Siraj Noor in one tap. Works offline after first visit via a service worker that precaches the shell.
+- This is the "maintain the connection after Ramadan" payoff - a lamp that sits in your app drawer, not a bookmark that gets lost in the browser.
 
 **Caption**
-`User API: bookmark + collection scopes`
+`PWA install · offline-ready · bookmarks + collections synced`
 
 ---
 
-## Scene 7 · Exploration reel [2:10 → 2:30]
+## Scene 8 · Exploration reel [2:40 → 2:55]
 
 Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 
@@ -135,7 +159,7 @@ Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 
 ---
 
-## Scene 8 · Close [2:30 → 2:45]
+## Scene 9 · Close [2:55 → 3:00]
 
 **Show**
 - Wide shot of the Surah Ring, camera pulls back
@@ -152,7 +176,7 @@ Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 
 **Beats to hit**
 - "See the structure, build the habit"
-- Ten views, one account, every ayah one click away
+- Ten views, one account, every ayah one click away, installable as a real app
 
 ---
 
@@ -160,10 +184,13 @@ Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 
 **Before rolling**
 
-- [ ] Sign in against the **prelive sandbox** (production client scopes not yet approved as of 2026-04-16). Both hosts produce identical-looking UI; prelive is the safe recording target.
-- [ ] Pre-seed reading sessions: visit at least 5 surahs across 5 different days so the Activity heatmap shows variance. The ReadingTracker auto-fires on `/surah/[id]` mount once per chapter per session, so visiting five surahs in one sitting creates one dense cell; to get multi-day data, record over several days or use QF's API directly to backfill.
+- [ ] Sign in against the **prelive sandbox** (production client scopes not yet approved as of 2026-04-17). Both hosts produce identical-looking UI; prelive is the safe recording target.
+- [ ] Pre-seed reading sessions: visit at least 5 surahs across 5 different days so the Activity heatmap shows variance. ReadingTracker auto-fires periodic activity-day flushes every 30s; to get multi-day data, record over several days or backfill via QF's API directly.
 - [ ] Pre-seed 3–4 bookmarks across different surahs (Fatihah 1:1, Baqarah 2:255, Nur 24:35, Rahman 55:13 makes a visually varied demo ring)
-- [ ] Create 1–2 collections so Scene 6's shelf has cards already present, and create one live on camera for the beat
+- [ ] Create 1–2 collections so Scene 7's shelf has cards already present, and create one live on camera for the beat
+- [ ] **Before Scene 4**: make sure the current session's goal is unset (`/dashboard` shows the preset buttons, not a progress bar). Delete any lingering goal via `/dashboard` → "Change" → then don't re-set until the camera is rolling.
+- [ ] **Before Scene 5**: close any in-flight activity-day flushes by reloading once so the goal progress starts from 0% on camera. The 30s periodic flush means the moment you open a surah, the timer starts.
+- [ ] **Before Scene 7**: uninstall any prior PWA install of Siraj Noor so Chrome shows the "Install" icon in the address bar fresh. On Windows: Chrome menu → Apps → right-click Siraj Noor → Uninstall.
 - [ ] Hide browser bookmarks bar + extension icons
 - [ ] Fresh incognito window with cookies from a prior signed-in session preserved (or sign in cleanly if you want the OAuth flow on camera - recommended for Scene 2)
 - [ ] Dark mode forced off at OS level (the app forces dark on its own; OS-level light mode prevents dev-tool panels from appearing dark in any system-chrome shots)
@@ -182,15 +209,16 @@ Fast cuts, ~3 seconds each. Pure eye candy, no auth.
 
 | Target | Action | Saves |
 |---|---|---|
-| 2:25 | Drop Scene 7 (exploration reel) | -20s |
-| 2:15 | Trim Scene 6 to bookmarks-only | -10s |
-| 2:05 | Skip tooltip hover in Scene 4 | -10s |
-| 2:00 | Cut Scene 5 stat-card cut | -5s |
+| 2:45 | Drop Scene 8 (exploration reel) | -15s |
+| 2:30 | Trim Scene 7 to bookmarks + install, skip collection creation | -10s |
+| 2:15 | Skip tafsir picker aside in Scene 5 | -3s |
+| 2:10 | Collapse Scene 6 heatmap camera rotation to 3s | -5s |
 
 ---
 
 ## Scenes to *never* cut
 
 1. **Scene 2 (sign-in flow)** - this is the eligibility proof. Without it on camera, judges may assume it's a content-API-only app.
-2. **Scene 4 (ring overlay + Today panel)** - highest visual impact to time ratio. The amber ring read indicator is the single most memorable shot.
-3. **Scene 5 (Activity 3D)** - the differentiator that makes this a ten-view app instead of a nine-view app.
+2. **Scene 4 + 5 (daily goal set → progress fills after reading)** - this is the narrative spine. Four User API endpoints flowing through a single coherent habit loop is the clearest "this app uses QF deeply" argument.
+3. **Scene 6 (Activity 3D)** - the differentiator that makes this a ten-view app instead of a nine-view app.
+4. **Scene 7 (PWA install)** - direct visual answer to "maintain the connection after Ramadan". Not just another viewer; a real app the user can install.

@@ -482,3 +482,106 @@ a90c1f4  Fork from siraj for Quran Foundation Hackathon submission
 ## Why nothing is committed to the original `ayat/` repo
 
 The original `C:\Users\bilal\projects\ayat` (`billkhiz-bit/siraj`) is the frozen Ramadan Hacks 2026 artefact. Modifying it would alter the URL judges from that hackathon may have visited, change the README narrative, and risk introducing a regression to a working deployed site. All hackathon-2 work happens in this fork.
+
+---
+
+## Day 6 — 2026-04-17 (feature completion sprint)
+
+Three days to submission deadline (2026-04-20). Session focus: close the gaps between "eligibility pass" and "competitive for top-three placement". Four commits shipped to production across the day.
+
+### Morning: scope audit + prioritisation
+
+Benchmarked the current state against the five hackathon judging criteria and identified tier-1 wins:
+- Goals API integration (scope was requested but unused)
+- PWA support (aligns with hackathon theme "maintain the connection after Ramadan")
+- Zod runtime validation at the QF API boundary (technical rigour signal)
+
+Followed by tier-2 polish and tier-3 innovation items, prioritised on impact-per-hour.
+
+### Commit 1 — `b3f8fe1` "Add Goals API, PWA, and runtime validation ahead of submission" (24 files, +1692 / -143)
+
+**Goals API.** Third User API scope now fully wired. Added to `qfApi`:
+- `getTodaysGoalPlan(type)` → `GET /goals/get-todays-plan?type=QURAN_TIME`
+- `createGoal(type, amount, category, options)` → `POST /goals?mushafId=4` with `{type, amount, category: "QURAN"}` body
+- `deleteGoal(id, category)` → `DELETE /goals/{id}?category=QURAN`
+- `logActivity(seconds, ranges, options)` → `POST /activity-days` with `{type: "QURAN", seconds, ranges, mushafId}`. Supports `keepalive: true` for page-close survival.
+
+New `GoalsProvider` context (`src/lib/auth/goals-context.tsx`) follows the BookmarksProvider/CollectionsProvider pattern. Persists target amount in localStorage (QF's `/goals/get-todays-plan` returns the progress ratio but not the target, so client-side shadow is required to display "7 of 10 min"). Cross-device fallback: if server reports no goal but local shadow exists, the shadow is wiped. Window focus + visibilitychange listeners refetch progress when user returns to the tab.
+
+`DailyGoalCard` component renders in two variants: `sidebar` (compact, lives in TodayPanel personal column) and `banner` (full-width, lives above the Activity heatmap). Signed-in users with no goal see 5/10/15/30-minute preset buttons; goal-set users see a progress bar with a "Change" affordance; signed-out users see a mock preview with a "Sign in" CTA.
+
+ReadingTracker extended: flushes activity-day posts periodically (every 30s on a surah page) in addition to the existing visibilitychange/pagehide/unmount flushes. `POST /activity-days` is the endpoint that actually drives QURAN_TIME progress — `POST /reading-sessions` only powers the streak and heatmap. Before this, progress never moved because time-based goal math needs explicit seconds + ranges, not just "user was here" pings.
+
+**PWA support.** Added `src/app/manifest.ts` (force-static for output:"export"), `public/sw.js`, `public/icon.svg`, `public/icon-maskable.svg`. Service worker precaches the app shell (/, /dashboard, /activity, /bookmarks, /collections, icons, manifest), cache-first for Next's hashed `_next/static/*`, network-first with cache fallback for HTML navigations. Explicitly refuses to cache QF API hosts and own `/api/*` routes (auth-sensitive). `ServiceWorkerRegistration` component registers `/sw.js` after window load, gated on `NODE_ENV === "production"`. `InstallPrompt` listens for `beforeinstallprompt`, shows a floating amber card with 14-day dismiss cooldown, auto-hides when `display-mode: standalone` or `appinstalled` fires. Layout metadata gains `themeColor: #f59e0b`, `icons: { icon, apple }`, `appleWebApp`.
+
+**Zod runtime validation at QF API boundary.** Every `qfFetch` response now runs through a Zod schema via `safeParse` before being handed back to the caller. Shape drift surfaces as a loud `QfApiError` with `error.issues` + 300-char response preview logged to console, not silent `undefined` fields three files deep. Wire-format types (`QfBookmark`, `QfCollection`, `QfReadingSession`, `QfTodayPlanData`) now inferred via `z.infer<typeof schema>` so compile-time and runtime views stay in lockstep. Schemas live in `src/lib/qf-schemas.ts`; new `listEnvelope<T>(item)` and `singleEnvelope<T>(data)` factories for the QF `{success, data, pagination}` shape.
+
+**Tafsir panel redesigned** for readable scholarly typography. Serif stack instead of `prose-sm`, amber margin rail on the left, scoped styling for the specific HTML elements tafsir actually uses (`<p>`, `<sup>`, `<em>`, `<i>`, inline Arabic via `[dir=rtl]`/`lang=ar`, `<blockquote>`). First-letter typographic lift. Footer with source attribution + "Read full ↗" deep-link to Qur'an.com.
+
+**Four user-raised issues, all fixed same-session.**
+1. Qibla not working even with OS-level location grant. Root cause: `public/_headers` line 25 had `geolocation=()` which denied geolocation for the site itself (empty allowlist means "only explicitly-listed origins", and no origins are listed, so none are allowed). Fixed to `geolocation=(self)` which permits the app while still denying third-party embeds.
+2. Activity logging lag. Progress only updated on page-hide/unmount. Fixed by periodic 30s flush (details above).
+3. Revelation timeline too fast. Added speed selector (0.5× / 1× / 2× / 4×). `speedRef.current` read on each RAF tick so mid-playback changes take effect without restarting the animation.
+4. Scroll feel. Added `scroll-behavior: smooth` globally (honours `prefers-reduced-motion`) plus a floating back-to-top button on surah pages that binds to the scrollable `<main>` element, not window.
+
+Pre-existing `chapter-audio-player.tsx:30` lint error (setState-in-effect) annotated with `eslint-disable-next-line` + justification, matching the established codebase pattern.
+
+### Commit 2 — `c488cd0` "Polish for submission: OG metadata, tafsir picker, daily anchors, a11y" (13 files, +680 / -135)
+
+**Tafsir picker.** Per-verse TafsirPanel now owns its own state and offers three preset tafsirs, verified against `api.quran.com/api/v4/resources/tafsirs?language=en`:
+- 169 = Ibn Kathir (Abridged, English), Hafiz Ibn Kathir — classical 14th-century
+- 168 = Ma'arif al-Qur'an, Mufti Muhammad Shafi — Deobandi, jurisprudentially detailed
+- 817 = Tazkirul Quran, Maulana Wahid Uddin Khan — contemporary, plain modern English
+
+Selection persists in localStorage via `src/lib/tafsir-presets.ts` with `loadTafsirPreference()` + `saveTafsirPreference()` helpers. Radio-chip UI in the panel header. Picker choice is global (one pref applies to every verse's panel); re-opening a verse reflects the latest choice. Also fixed a stale code comment — default tafsir id 169 was labelled "Maududi" but is actually Ibn Kathir per the live resource endpoint.
+
+**Open Graph + Twitter cards.** `layout.tsx` metadata gains `openGraph` block (type: website, siteName, title, description, url, locale: en_GB, images pointing at `/og-image.svg` with 1200×630 dimensions) and `twitter` block (card: summary_large_image). `metadataBase: new URL(SITE_URL)` so relative image paths resolve correctly. Added keywords, authors, creator, publisher. Custom `public/og-image.svg` designed to match the site identity — amber concentric rings + luminous core on the left, "Siraj Noor" in serif on the right, three meta chips (10 3D VIEWS / OAUTH + BOOKMARKS / OFFLINE PWA) at the bottom.
+
+**SEO baseline.** `public/robots.txt` (allow all, disallow `/api/` and `/auth/callback/`, point at sitemap). `src/app/sitemap.ts` with `export const dynamic = "force-static"` generates `/sitemap.xml` covering 16 top-level routes + 114 surah detail pages.
+
+**Accessibility skip link.** `src/components/a11y/skip-link.tsx` is a client component that renders a visually-hidden "Skip to main content" anchor. On keyboard focus it surfaces as an amber-bordered button, and the click handler queries the first `<main>` on the page, sets `tabindex="-1"`, and focuses it. Works on every route without requiring per-page id annotation. Dashboard page gains explicit `id="main-content"` and `id="surah-structure"` so the streak-at-risk banner's "Pick a surah" button deep-links cleanly.
+
+**Surah of the Day.** New dashboard card above the Surah Structure ring. `pickDailySurahNumber()` in `lib/daily-ayah.ts` picks one of 114 surahs deterministically on the UTC day, using a seed offset from the daily-ayah picker so the two cards aren't correlated. Renders name (English + Arabic), meaning, Meccan/Medinan chip, ayat count, revelation order, and a "Read {name} →" CTA.
+
+**Streak-at-risk banner.** Shows on `/dashboard` when the user has a running streak and the most recent session timestamp is more than 20 hours ago. Urgency colour escalates from amber to rose when fewer than 3 hours remain until local midnight. `nowTick` state refreshes every minute so the banner can show/hide and the "hours until midnight" label stays accurate without a page reload. Inline compute rather than `useMemo` to satisfy React 19's `preserve-manual-memoization` rule.
+
+### Commit 3 — `490f9b2` "Loosen Zod schemas to match QF's actual optional fields" (2 files, +29 / -8)
+
+First round of Zod schema fixes. Cross-referenced every required field in `qf-schemas.ts` against the live QF OpenAPI at `api-docs.quran.foundation/openAPI/user-related-apis/v1.json`:
+- `Bookmark.verseNumber` — was required+nullable, QF lists it as optional+nullable (surah-level bookmarks omit it entirely). Made optional.
+- `ReadingSession.chapterNumber`, `ReadingSession.verseNumber` — were required, QF's schema only lists `id` and `updatedAt` as required. Made optional.
+- `toReadingSession` adapter updated to emit `verse_key: undefined` rather than the string `"undefined:undefined"` when the fields are absent.
+- `pagination.hasNextPage`, `hasPreviousPage`, `startCursor`, `endCursor` all made optional.
+
+### Commit 4 — `447d665` "Loosen list envelope + bump SW cache + surface QfApiError detail" (3 files, +32 / -7)
+
+Second round after a user-reported "showing sample data" banner on `/collections`. Root cause: the envelope schema itself required `success` and `pagination`, but the QF OpenAPI lists no required fields at the envelope level. Empty lists and some cached responses omit the pagination block entirely, tripping validation.
+
+- `listEnvelope` and `singleEnvelope` now mark `success` and `pagination` optional; `data` stays required since callers can't render without it.
+- `CollectionsProvider.reload` catch block now logs `QfApiError.status` and `.message` separately so devtools inspection surfaces the real cause (shape drift vs 401 vs 403 vs network error) instead of the opaque "Couldn't reach QF" UI banner.
+- `public/sw.js` `CACHE_VERSION` bumped from `v1` to `v2` so installed PWAs with stuck v1 cache get a fresh app shell on next visit.
+
+### Deployment summary
+
+Four production deploys today, each verified via the unique Cloudflare URL alias:
+
+| Commit | Unique URL | Notes |
+|---|---|---|
+| `b3f8fe1` | `39c07f2c.siraj-noor.pages.dev` | Goals + PWA + Zod batch |
+| `c488cd0` | `74b5f4fb.siraj-noor.pages.dev` | Tafsir picker + OG + daily anchors |
+| `490f9b2` | `aa1f59e6.siraj-noor.pages.dev` | First schema loosening |
+| `447d665` | `d8c6b46e.siraj-noor.pages.dev` | Envelope loosening + SW v2 |
+
+Production alias `siraj-noor.pages.dev` points at the latest (`447d665`). GitHub `billkhiz-bit/siraj-noor` on `master`.
+
+### Open question for next session
+
+User reports the "showing sample data" banner was still visible after `447d665` deployed. Next diagnostic: they will paste the exact `[qfFetch]` or `[CollectionsProvider]` console output so the remaining mismatch (if any) can be pinpointed to a single field. The upgraded error logging in `447d665` is designed to make this one-message exchange sufficient.
+
+### Day 6 still TODO for submission
+
+1. Confirm sample-data banner is resolved (or identify the remaining schema mismatch).
+2. Record the 2:30 demo video per the updated DEMO_SCRIPT.md beat sheet.
+3. Run actual Lighthouse against production and capture score screenshots for the demo reel.
+4. Secret-scan and flip repo visibility to public on submission morning (cron reminder set for 2026-04-20 07:19 UK).
+5. Paste final SUBMISSION.md into the Provision Launch portal form and submit before end of Shawwal 1447.

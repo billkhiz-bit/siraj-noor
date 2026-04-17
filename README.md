@@ -10,7 +10,9 @@ Built for the [Quran Foundation Hackathon 2026](https://hackathon.provisionlaunc
 
 ## What is Siraj Noor?
 
-Siraj Noor illuminates the structure, patterns, and geography of the Qur'an and Hadith through interactive 3D data visualisation - and now goes further by layering a personal companion experience on top. Bookmark ayahs from any 3D view, save them into collections, track your reading streak, and watch your reading progress light up the Surah Ring. All personal data is stored on your Quran Foundation account (via the User APIs) so it travels with you across devices.
+Siraj Noor illuminates the structure, patterns, and geography of the Qur'an and Hadith through interactive 3D data visualisation - and now goes further by layering a personal companion experience on top. Bookmark ayahs from any 3D view, save them into collections, set a daily reading goal and watch the progress fill as you read, track your streak, and see your reading progress light up the Surah Ring. All personal data is stored on your Quran Foundation account (via the User APIs) so it travels with you across devices.
+
+Install it. Siraj Noor is a Progressive Web App - one tap on desktop Chrome or Android to install as a standalone app, or Share → Add to Home Screen on iOS 17+. After first visit the service worker caches the shell, so the dashboard, activity heatmap, bookmarks, collections, and visited surahs render offline.
 
 Most Islamic apps focus on reading and listening. Siraj Noor lets you *see* the data **and** build a lasting relationship with what you've explored.
 
@@ -35,8 +37,11 @@ Most Islamic apps focus on reading and listening. Siraj Noor lets you *see* the 
 
 | Page | Description |
 |------|-------------|
-| **Surah Detail** | Click any surah from the Surah Structure ring for Arabic text, English translation (Sahih International), transliteration, and a 3D verse structure chart. Click-to-pin any ayah, bookmark any verse. |
-| **Today Panel** | Dashboard header showing a date-deterministic Ayah of the Day, your current streak, and how much of the mushaf you've visited this year. Powered by the `reading_session` and `streak` scopes. |
+| **Surah Detail** | Click any surah from the Surah Structure ring for Arabic text, English translation (Sahih International), transliteration, chapter recitation audio, and a 3D verse structure chart. Click-to-pin any ayah, bookmark any verse, open commentary from a three-option tafsir picker (Ibn Kathir, Ma'arif al-Qur'an, Tazkirul Quran - choice persists across verses). |
+| **Today Panel** | Dashboard header showing a date-deterministic Ayah of the Day, your current streak, daily goal progress, and how much of the mushaf you've visited this year. Powered by the `reading_session`, `streak`, and `goal` scopes. |
+| **Daily Goal Card** | Set a 5/10/15/30-minute daily reading target, see progress as you read. Server-tracked via `/goals/get-todays-plan` + `/activity-days`. Renders in both the Today Panel sidebar and as a banner above the Activity heatmap. |
+| **Surah of the Day** | Deterministic rotating recommendation, fresh every UTC day. Uncorrelated seed from Ayah of the Day so returning visitors get two distinct daily anchors. |
+| **Streak-at-Risk Banner** | Surfaces on the dashboard when a running streak is within 20 hours of resetting. Urgency escalates from amber to rose as local-midnight rollover approaches. In-app nudge, no push-notification permission required. |
 | **Bookmarks** | Dedicated list view of every ayah you've saved. Click a bookmark to jump back to its surah. Stored on your Quran.com account via the `bookmark` scope. |
 | **Collections** | Themed groupings of bookmarks rendered as a CSS-perspective 3D shelf. Name a collection, drop saved ayahs into it. Synced via the `collection` scope. |
 
@@ -64,11 +69,13 @@ All data is sourced from authoritative references:
 
 ## Tech Stack
 
-- **Next.js 16** (App Router, static export)
+- **Next.js 16** (App Router, static export), React 19, TypeScript
+- **Zod 4** for runtime validation at every QF API boundary - shape drift surfaces as a loud structured error, not a silent undefined
 - **Three.js** via React Three Fiber + Drei + Post-processing
 - **MapLibre GL** + react-map-gl (CARTO Dark Matter no-labels tiles)
-- **shadcn/ui** + Tailwind CSS v4 + Geist fonts
-- **Quran Foundation User APIs v1** (OAuth 2.0 PKCE, bookmarks, collections, reading sessions, streaks) + Content API v4 (verse text, translations, transliteration)
+- **shadcn/ui** on base-ui + Tailwind CSS v4 + Geist fonts
+- **Quran Foundation User APIs v1** (OAuth 2.0 PKCE, bookmarks, collections, reading sessions, streaks, goals, activity-days) + Content API v4 (verse text, translations, transliteration, tafsir, chapter audio, search)
+- **Progressive Web App**: web manifest with maskable icon, service worker with precache + cache-first static + network-first HTML, `beforeinstallprompt` install card with 14-day dismiss cooldown
 - **Cloudflare Pages** (static hosting) + **Cloudflare Pages Functions** (OAuth token proxy for confidential client secret)
 
 ## Running Locally
