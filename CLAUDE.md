@@ -5,7 +5,7 @@
 ## Project Overview
 Fork of Siraj built for the Quran Foundation Hackathon 2026 (Provision Launch, deadline 2026-04-20). Adds a personal companion layer on top of the original exploratory 3D views: OAuth authentication, bookmarks, collections, streak tracking, reading progress, reflections, and an Activity dashboard - all powered by Quran Foundation User APIs.
 
-**Live URL**: https://siraj-noor.pages.dev (pending first deploy)
+**Live URL**: https://siraj-noor.pages.dev
 **GitHub**: https://github.com/billkhiz-bit/siraj-noor (private)
 **Parent project**: https://github.com/billkhiz-bit/siraj (original Siraj, frozen for Ramadan Hacks)
 **Local dev**: `cd C:\Users\bilal\projects\siraj-noor && npx next dev --port 3000`

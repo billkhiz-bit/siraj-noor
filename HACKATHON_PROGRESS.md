@@ -585,3 +585,111 @@ User reports the "showing sample data" banner was still visible after `447d665` 
 3. Run actual Lighthouse against production and capture score screenshots for the demo reel.
 4. Secret-scan and flip repo visibility to public on submission morning (cron reminder set for 2026-04-20 07:19 UK).
 5. Paste final SUBMISSION.md into the Provision Launch portal form and submit before end of Shawwal 1447.
+
+---
+
+## Day 7 — 2026-04-18 (audit pass + cross-device cleanup + deploy)
+
+Two days to submission. This session had three concurrent strands: resolving the mid-flight audit started on 2026-04-17, untangling a two-clone divergence, and shipping the cleaned-up code to production.
+
+### Commit 1 — `a5b2638` "Audit pass: resolve 30 findings across a11y, security, and perf" (40 files, +578 / −940)
+
+Parallel three-agent audit (code-review + security + frontend-a11y) on the whole codebase produced 30 verified findings (6 Critical, 10 Important, 14 Minor). All 30 resolved in a single sweep, saved as `AUDIT_REPORT.md` with a resolution summary.
+
+**Critical (6):**
+- Deleted 714-line `revelation-globe.tsx` (unreferenced, never imported — `/map` uses `revelation-map.tsx`)
+- Deleted 44-line `sticky-tooltip.tsx` (superseded by click-to-pin)
+- Added `role="img"` + descriptive `aria-label` to 8 previously unlabelled 3D canvases (surah-3d-chart, names-3d, sacred-sites-3d, hadith-explorer-3d, isnad-network-3d, prophet-timeline-3d, word-cloud-3d, verse-visualisation) — `CLAUDE.md` had claimed this was codebase-wide but only 2 of 10 actually carried the labels, so WAVE/axe would have flagged 8 routes
+- Wrapped tafsir HTML in DOMPurify with a tight ALLOWED_TAGS/ATTR whitelist — `tafsir.text` from `api.quran.com` was going into `dangerouslySetInnerHTML` raw, and CSP is currently off (per `7785200`) so there was no second line of defence
+- Fixed Qibla `deviceorientation` listener leak — was attached outside any `useEffect` with no cleanup, leaked a closure + setter on every remount
+- Downgraded InstallPrompt `role="dialog"` → `role="region"` — not a modal, no focus trap, shouldn't claim dialog semantics
+
+**Important (10):**
+- Moved Surah-ring `controlsRef` assignment from `useFrame` (60 Hz allocation storm: new `{zoomIn, zoomOut}` object + 2 closures ~180/sec) to a one-shot `useEffect`
+- Added `prefers-reduced-motion` CSS block in globals.css (kills animate-ping/pulse/twinkle/transitions) + new `useReducedMotion` hook applied to all 7 `autoRotate` consumers so vestibular-sensitive users get a quiet UI
+- Landing page outer div role/tabIndex anti-pattern removed, proper `<button aria-label="Enter Siraj Noor">` added for keyboard/screen-reader users
+- Four more `h-[calc(100vh-2rem)]` → `h-dvh` swaps on the non-surah canvases (journeys-map, names-3d, revelation-map, sacred-sites-3d)
+- Pages Function origin allowlist now gated on `QF_ALLOW_DEV_ORIGINS=true` env var — prod deploys reject `localhost:3000/3001` by default, closing the "dev origin in prod proxy" loophole
+- Upstream non-JSON bodies no longer relayed through `/api/qf/token` and `/api/qf/refresh` under `application/json` — Hydra HTML stack traces and 5xx pages now map to sanitised `upstream_error` instead
+- Token-exchange error body truncated to 160 chars before bubbling into the callback page UI (was echoing Hydra payloads that can contain the authorization code + request fragments)
+- Dropped `bookmarks_count` from Collection type and `duration_seconds` from ReadingSession type (phantom fields — never populated from QF for signed-in users, UI gracefully hid for them but shone through in mock preview, producing a demo-disparity gap)
+- Removed `_note` and `_description` params from `createBookmark`/`createCollection` (QF's `additionalProperties: false` rejected them anyway); providers now preserve note/description in optimistic reconciliation so the reflection composer still works in-session
+- Service worker `networkFirst` path explicitly excludes `/auth/callback/` so OAuth `code` + `state` query params never end up in Cache Storage
+
+**Minor (14):**
+- Consolidated duplicated `sortedData` `useMemo` in surah-3d-chart (was computed in both parent and inner Scene)
+- Hoisted `CAMERA_POSITIONS` record in sacred-sites-3d to module scope (was re-allocated each useFrame tick)
+- `React.MutableRefObject` → `RefObject<T | null>` in 2 files (React 19 deprecation)
+- Added comment explaining longest-streak mock/real disparity (QF v1 has no longest claim; UI chip hides for signed-in users, shows for mock preview)
+- Replaced empty-body `if` guard in reading-tracker with explicit early return
+- Removed misleading "Enter to select" hint from search footer (no key handler existed)
+- Replaced `dangerouslySetInnerHTML` with plain text in streak-celebration blurb (was only there to render `&apos;`)
+- Added terminal `.catch` to `fetchTafsir` chain
+- Hoisted `longestSurah` to module scope in dashboard page (was computed per render)
+- Dropped `role="radio"`/`role="radiogroup"` from tafsir picker (WAI-ARIA requires arrow-key nav which wasn't wired); now plain buttons with `aria-pressed`
+- Added `createdAt` + 10-minute TTL to PKCE entries in `sessionStorage` so abandoned logins don't leave stale `codeVerifier` indefinitely
+- `React.memo` wrap on CellMesh (activity-3d), WordNode (word-cloud), VerseBar (verse-visualisation) — the three hottest mesh-per-frame paths; hover on cell N no longer re-renders the other 364
+- `useMemo` on interpolated `THREE.Color` in VerseBar; module-scoped `FALLBACK_COLOUR` in word-cloud
+- Muted-text contrast: `/40` → `/60` on 5 files, `/50` → `/60` on 7 HUD-heavy 3D views (landing stats labels and inactive-state markers intentionally left at `/50` as decorative)
+
+### Commit 2 — `5465f41` "Backport Next DoS patch and scope cleanup from 2026-04-17 branch" (3 files, +47 / −43)
+
+Two items that landed on a parallel checkout last night but didn't make it into the big audit commit above:
+
+- Upgraded `next` 16.2.1 → 16.2.4 to clear GHSA-q4gf-8mx6-v5v3 (DoS via Server Components). Static-export doesn't ship an SSR runtime so exploitability was low, but keeps `npm audit` on runtime deps clean.
+- Dropped `user` + `post` from `QF_SCOPES` in `src/lib/auth/config.ts`. `user` was redundant (we derive name/email/picture from id_token claims directly) and `post` was never exercised by any shipped feature. QF's eligibility review flags unused scopes, so trimming.
+
+### The two-clone divergence (how it happened, how it was resolved)
+
+Last night's session (2026-04-17 22:48–22:52) happened in `C:\Users\bilal\projects\siraj-noor` and produced two commits (`b145967` + `506eade`) that were never pushed. Today's session opened from `C:\Users\bilal\OneDrive\Desktop\siraj-noor` — a separate git clone of the same remote that happened to live under OneDrive. Today's Claude couldn't find last night's memory because the auto-memory directory keys on absolute path (`.../C--Users-bilal-OneDrive-Desktop-siraj-noor/memory/` vs `.../C--Users-bilal-projects-siraj-noor/memory/`).
+
+Outcome: both clones had independent audit branches diverging from the same `44a75da` ancestor. Resolved by:
+
+1. Verifying content from last night's `506eade` against today's `a5b2638` — today's commit was a strict superset for 3D a11y + h-dvh work; the Next upgrade + scope drop were unique to `506eade` so those got backported explicitly as `5465f41`.
+2. Pushing today's branch (`a5b2638` + `5465f41`) to `origin/master`.
+3. Hard-resetting `projects/` copy to `origin/master`. Old SHAs `b145967` + `506eade` became orphaned but remain in reflog for ~90 days (recoverable via `git branch rescue <sha>`).
+4. Deleting the OneDrive-synced `siraj-noor` clone (after confirming no uncommitted content-bearing changes).
+
+### Commit 3 — `a88a29f` "Document canonical clone path and cross-device workflow" (1 file, +2)
+
+Project-level `CLAUDE.md` updated with: single clone per device at `C:\Users\bilal\projects\siraj-noor`, sync via `git push`/`git pull` only, never via OneDrive. Global `~/.claude/CLAUDE.md` also updated (separately, not in this repo) with a reusable "Multi-Device Git Workflow" section so this lesson applies to every project going forward.
+
+### Commit 4 — pending — `HACKATHON_PROGRESS.md` Day 7 entry
+
+This entry plus a few related doc updates.
+
+### Production deploy
+
+`npm run deploy` from `C:\Users\bilal\projects\siraj-noor` with `.env.production.local` present:
+
+- Build: Next.js 16.2.4 on Turbopack, 136 static pages, TypeScript + lint clean
+- Upload: 1224 files (24 cached), Pages Functions bundle compiled and uploaded
+- Deployment URL: `ac06c4e6.siraj-noor.pages.dev`, aliased to `siraj-noor.pages.dev`
+
+Smoke-test post-deploy (trailing slashes required per `trailingSlash: true`):
+
+| Route | Status |
+|---|---|
+| `/` | 200 |
+| `/dashboard/` | 200 |
+| `/activity/` | 200 |
+| `/qibla/` | 200 |
+| `/surah/1/` | 200 |
+| `/api/qf/token` (GET) | 405 (method_not_allowed — confirms new Pages Function handler deployed) |
+
+### Where state lives after today
+
+| Location | What's there | Keep? |
+|---|---|---|
+| `origin/master` on GitHub | `a88a29f` + all audit commits | ✓ canonical |
+| `C:\Users\bilal\projects\siraj-noor` | clone of master + env files | ✓ daily dev happens here |
+| `C:\Users\bilal\OneDrive\Desktop\siraj-noor` | duplicate clone from earlier today | ✗ scheduled for deletion |
+| `C:\Users\bilal\package-lock.json` | orphan lockfile, no sibling manifest | ✗ deleted |
+
+### Day 7 still TODO for submission
+
+1. Delete the OneDrive-synced clone once the Explorer window is closed (blocked by Windows file handle).
+2. Paste `QF_CLIENT_SECRET` into `.dev.vars` on this device if/when local Pages Function testing is needed (not blocking for any live path).
+3. Record the 2:30 demo video per `DEMO_SCRIPT.md`.
+4. Lighthouse against `https://siraj-noor.pages.dev` + capture screenshots.
+5. Flip repo public on 2026-04-20 morning; paste `SUBMISSION.md` into the Provision Launch portal.
