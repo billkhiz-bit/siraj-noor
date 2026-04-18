@@ -34,16 +34,20 @@ export const QF_REFRESH_URL = USE_DIRECT_TOKEN
 
 export const QF_TOKEN_USES_PROXY = !USE_DIRECT_TOKEN;
 
+// QF scope policy: request only what the app actually uses. The `user`
+// scope granted full profile access but nothing in the UI consumes it
+// (we derive name/email/picture from the id_token claims directly);
+// `post` was reserved for a social-sharing feature never shipped.
+// Both surface on QF's eligibility review, so we drop them. Re-adding
+// requires a matching feature that exercises the scope.
 export const QF_SCOPES = [
   "openid",
   "offline_access",
-  "user",
   "bookmark",
   "collection",
   "reading_session",
   "goal",
   "streak",
-  "post",
 ].join(" ");
 
 export function getRedirectUri(): string {
