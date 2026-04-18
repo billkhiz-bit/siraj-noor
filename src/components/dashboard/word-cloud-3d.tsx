@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { memo, useState, useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Text, Stars } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { quranicWords, wordCategories, type QuranicWord } from "@/lib/data/words";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 type FilterMode = "all" | "divine" | "action" | "concept" | "nature" | "person" | "time";
 
@@ -28,7 +29,11 @@ function fibonacciSphere(index: number, total: number, radius: number) {
   );
 }
 
-function WordNode({
+// Memoised so hover on one word doesn't invalidate the other 59 nodes.
+// Parent passes per-word booleans (isHovered), so React.memo's default
+// shallow compare is sufficient.
+const FALLBACK_COLOUR = new THREE.Color("#ffffff");
+const WordNode = memo(function WordNode({
   word,
   position,
   maxFreq,
@@ -44,7 +49,7 @@ function WordNode({
   isHovered: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  const colour = categoryColourMap[word.category] || new THREE.Color("#ffffff");
+  const colour = categoryColourMap[word.category] || FALLBACK_COLOUR;
   const size = 0.4 + (word.frequency / maxFreq) * 1.8;
 
   useFrame((state) => {
@@ -95,7 +100,7 @@ function WordNode({
       </Text>
     </group>
   );
-}
+});
 
 function Scene({
   filter,
@@ -108,6 +113,7 @@ function Scene({
   onHover: (w: QuranicWord | null) => void;
   onClick: (w: QuranicWord) => void;
 }) {
+  const reducedMotion = useReducedMotion();
   const filtered = useMemo(() => {
     const words = filter === "all" ? quranicWords : quranicWords.filter((w) => w.category === filter);
     return words.sort((a, b) => b.frequency - a.frequency).slice(0, 60);
@@ -145,7 +151,7 @@ function Scene({
         enablePan={false}
         minDistance={8}
         maxDistance={30}
-        autoRotate
+        autoRotate={!reducedMotion}
         autoRotateSpeed={0.3}
         keyEvents={false}
       />
@@ -213,7 +219,11 @@ export function WordCloud3D() {
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row">
-        <div className={`relative overflow-hidden rounded-xl border border-border bg-[#0a0a1a] ${selectedWord ? "h-[350px] w-full md:h-[560px] md:w-2/3" : "h-[350px] w-full md:h-[560px]"}`}>
+        <div
+          className={`relative overflow-hidden rounded-xl border border-border bg-[#0a0a1a] ${selectedWord ? "h-[350px] w-full md:h-[560px] md:w-2/3" : "h-[350px] w-full md:h-[560px]"}`}
+          role="img"
+          aria-label="3D Fibonacci sphere of the most frequent Qur'anic words. Text size encodes frequency. Click a word to search the Qur'an for ayahs containing it."
+        >
           <Canvas
             camera={{ position: [0, 0, 18], fov: 55 }}
             gl={{ antialias: true, alpha: false }}
@@ -249,7 +259,7 @@ export function WordCloud3D() {
             </div>
           )}
 
-          <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/50">
+          <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/60">
             Drag to orbit · Scroll to zoom · Click word for ayahs
           </div>
         </div>

@@ -203,7 +203,7 @@ export function JourneysMap() {
   );
 
   return (
-    <div className="relative h-[calc(100vh-2rem)] w-full overflow-hidden rounded-xl">
+    <div className="relative h-dvh w-full overflow-hidden rounded-xl">
       <Map
         ref={mapRef}
         initialViewState={{
@@ -399,7 +399,7 @@ export function JourneysMap() {
       </div>
 
       {/* Bottom-right */}
-      <div className="pointer-events-none absolute bottom-5 right-5 font-mono text-[10px] text-muted-foreground/40">
+      <div className="pointer-events-none absolute bottom-5 right-5 font-mono text-[10px] text-muted-foreground/60">
         DRAG TO PAN · SCROLL TO ZOOM
       </div>
     </div>

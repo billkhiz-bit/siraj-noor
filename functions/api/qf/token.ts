@@ -23,6 +23,11 @@ interface Env {
   QF_CLIENT_ID: string;
   QF_CLIENT_SECRET: string;
   QF_TOKEN_ENDPOINT?: string;
+  // When set to the string "true" on a Cloudflare Pages deployment,
+  // extend the Origin allowlist to include localhost:3000/3001. Leave
+  // unset (or set to anything else) on production so a malicious page
+  // served from localhost cannot POST through the proxy.
+  QF_ALLOW_DEV_ORIGINS?: string;
 }
 
 interface EventContext {
@@ -43,12 +48,17 @@ const DEFAULT_TOKEN_ENDPOINT =
 // Pages Function is effectively an open OAuth relay - any site on the
 // internet could POST a stolen PKCE code and have the confidential client
 // secret attached for them. Matched byte-for-byte against the request
-// Origin; requests with no Origin header are rejected.
-const ALLOWED_ORIGINS = new Set([
-  "https://siraj-noor.pages.dev",
-  "http://localhost:3000",
-  "http://localhost:3001",
-]);
+// Origin; requests with no Origin header are rejected. Localhost is gated
+// behind QF_ALLOW_DEV_ORIGINS so production deployments can't be abused
+// by a page served from an attacker-controlled local server.
+function buildAllowedOrigins(env: Env): Set<string> {
+  const origins = new Set<string>(["https://siraj-noor.pages.dev"]);
+  if (env.QF_ALLOW_DEV_ORIGINS === "true") {
+    origins.add("http://localhost:3000");
+    origins.add("http://localhost:3001");
+  }
+  return origins;
+}
 
 // Cap request size so an attacker can't tie up a Worker invocation by
 // streaming a huge body. Real PKCE token-exchange bodies are well under
@@ -78,7 +88,7 @@ export const onRequestPost = async ({
   env,
 }: EventContext): Promise<Response> => {
   const origin = request.headers.get("origin");
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) {
+  if (!origin || !buildAllowedOrigins(env).has(origin)) {
     return jsonError(
       403,
       "forbidden_origin",
@@ -150,10 +160,24 @@ export const onRequestPost = async ({
     );
   }
 
-  // Pass through status and body verbatim so the browser sees the real
-  // OAuth error semantics (invalid_grant, etc.) without us inventing our
-  // own error shape.
+  // Relay the upstream body only when QF actually returned JSON. Hydra
+  // occasionally returns HTML stack traces on 5xx or infra errors; if
+  // we forward those as application/json the browser either sees a
+  // parse error or (worse) renders QF's internal error shape as a
+  // source of leaked debug info. Non-JSON upstream responses are
+  // mapped to a sanitised shape so the OAuth error semantics
+  // (invalid_grant, etc.) propagate when they're available, and
+  // anything else becomes an opaque "upstream_error".
   const body = await upstream.text();
+  const upstreamContentType = upstream.headers.get("content-type") ?? "";
+  const looksLikeJson = upstreamContentType.includes("application/json");
+  if (!looksLikeJson) {
+    return jsonError(
+      upstream.ok ? 502 : upstream.status,
+      "upstream_error",
+      `Quran Foundation returned a non-JSON response (status ${upstream.status}).`
+    );
+  }
   return new Response(body, {
     status: upstream.status,
     headers: { "content-type": "application/json" },

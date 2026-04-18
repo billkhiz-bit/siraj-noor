@@ -57,15 +57,16 @@ export function LandingPage() {
     };
   }, []);
 
+  // Click-anywhere-to-enter is preserved as a purely visual affordance.
+  // Screen readers and keyboard users reach the landing via the centred
+  // "Enter Siraj Noor" button further down, not via the outer wrapper.
+  // Previous implementation used role="button" + tabIndex={0} on the
+  // outer div, which made assistive tech announce the entire page as a
+  // single button - a discoverability disaster.
   return (
     <div
       className="relative flex h-dvh w-full cursor-pointer flex-col items-center justify-center overflow-hidden bg-[#030308]"
       onClick={() => router.push("/dashboard")}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") router.push("/dashboard");
-      }}
-      role="button"
-      tabIndex={0}
     >
       {/* Starfield background */}
       <Stars />
@@ -116,7 +117,7 @@ export function LandingPage() {
         <p className="mt-3 text-center text-2xl text-muted-foreground/60" dir="rtl" style={{ fontFamily: "serif" }}>
           سراج نور
         </p>
-        <p className="mt-1 font-mono text-xs text-muted-foreground/40">
+        <p className="mt-1 font-mono text-xs text-muted-foreground/60">
           &ldquo;We sent you as a shining lamp&rdquo; (33:46)
         </p>
 
@@ -128,10 +129,18 @@ export function LandingPage() {
         >
           <div className="flex flex-col items-center gap-2">
             <div className="h-8 w-px bg-gradient-to-b from-transparent via-amber-500/50 to-transparent" />
-            <p className="font-mono text-[11px] tracking-wider text-muted-foreground/50">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push("/dashboard");
+              }}
+              className="rounded-sm px-2 py-1 font-mono text-[11px] tracking-wider text-muted-foreground/70 transition-colors hover:text-amber-500 focus-visible:text-amber-500"
+              aria-label="Enter Siraj Noor"
+            >
               <span className="md:hidden">TAP TO EXPLORE</span>
               <span className="hidden md:inline">CLICK OR PRESS ENTER</span>
-            </p>
+            </button>
           </div>
         </div>
 

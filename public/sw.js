@@ -21,7 +21,7 @@
 // visit. The activate handler below deletes any cache whose name
 // doesn't match CACHE_NAME, so the old v1 cache is garbage-
 // collected on first activation after deploy.
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const CACHE_NAME = `siraj-noor-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
@@ -87,6 +87,17 @@ self.addEventListener("fetch", (event) => {
 
   // Our own OAuth token proxy routes - never cache.
   if (url.origin === self.location.origin && url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  // OAuth callback URLs carry single-use `code` + `state` query params.
+  // Caching them risks stashing those secrets in the Cache Storage API
+  // where a compromised extension or XSS sink could later read them.
+  // Let the browser handle these navigations directly.
+  if (
+    url.origin === self.location.origin &&
+    url.pathname.startsWith("/auth/callback")
+  ) {
     return;
   }
 

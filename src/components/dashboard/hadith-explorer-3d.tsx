@@ -10,6 +10,7 @@ import {
   topicCategoryColours,
   type HadithCollection,
 } from "@/lib/data/hadith-collections";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 const COLLECTION_COLOURS: Record<string, string> = {
   bukhari: "#f59e0b",
@@ -139,6 +140,7 @@ function Scene({
   onHover: (c: HadithCollection | null) => void;
   onSelect: (c: HadithCollection) => void;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <>
       <ambientLight intensity={0.6} />
@@ -167,7 +169,7 @@ function Scene({
         enablePan
         minDistance={8}
         maxDistance={35}
-        autoRotate={!selectedCollection}
+        autoRotate={!reducedMotion && !selectedCollection}
         autoRotateSpeed={0.3}
         target={[0, 3, 0]}
         keyEvents={false}
@@ -247,7 +249,11 @@ export function HadithExplorer3D() {
 
       <div className="flex flex-col gap-4 md:flex-row">
         {/* 3D Canvas */}
-        <div className={`relative overflow-hidden rounded-xl border border-border bg-[#0a0a1a] ${selectedCollection ? "h-[350px] w-full md:h-[560px] md:w-1/2" : "h-[350px] w-full md:h-[560px]"}`}>
+        <div
+          className={`relative overflow-hidden rounded-xl border border-border bg-[#0a0a1a] ${selectedCollection ? "h-[350px] w-full md:h-[560px] md:w-1/2" : "h-[350px] w-full md:h-[560px]"}`}
+          role="img"
+          aria-label="3D towers representing the six major hadith collections (Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah), sized by number of ahadith. Click a tower to view topic breakdown and sample narrations."
+        >
           <Canvas
             camera={{ position: [0, 8, 16], fov: 55 }}
             gl={{ antialias: true, alpha: false }}
@@ -287,7 +293,7 @@ export function HadithExplorer3D() {
             </div>
           )}
 
-          <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/50">
+          <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/60">
             Drag to orbit · Click tower to explore
           </div>
         </div>

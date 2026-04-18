@@ -11,6 +11,7 @@ import {
   generationColours,
   type Narrator,
 } from "@/lib/data/narrators";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 const GENERATION_LAYERS: Record<string, number> = {
   prophet: 8,
@@ -140,6 +141,7 @@ function Scene({
   onHover: (n: Narrator | null) => void;
   onClick: (n: Narrator) => void;
 }) {
+  const reducedMotion = useReducedMotion();
   const positionMap = useMemo(() => {
     const map: Record<string, THREE.Vector3> = {};
     const byGeneration: Record<string, Narrator[]> = {};
@@ -224,7 +226,7 @@ function Scene({
         enablePan
         minDistance={6}
         maxDistance={30}
-        autoRotate
+        autoRotate={!reducedMotion}
         autoRotateSpeed={0.2}
         target={[0, 2, 0]}
         keyEvents={false}
@@ -264,7 +266,11 @@ export function IsnadNetwork3D() {
 
       <div className="relative flex flex-col gap-4 md:flex-row">
         {/* 3D Canvas */}
-        <div className={`relative overflow-hidden rounded-xl border border-border bg-[#0a0a1a] ${selectedNarrator ? "h-[350px] w-full md:h-[560px] md:w-2/3" : "h-[350px] w-full md:h-[560px]"}`}>
+        <div
+          className={`relative overflow-hidden rounded-xl border border-border bg-[#0a0a1a] ${selectedNarrator ? "h-[350px] w-full md:h-[560px] md:w-2/3" : "h-[350px] w-full md:h-[560px]"}`}
+          role="img"
+          aria-label="3D layered network of hadith narrators across four generations, from companions of the Prophet to the compilers of the Six Books. Click a node to read the narrator's biography."
+        >
           <Canvas
             camera={{ position: [0, 6, 16], fov: 55 }}
             gl={{ antialias: true, alpha: false }}
@@ -307,7 +313,7 @@ export function IsnadNetwork3D() {
             </div>
           )}
 
-          <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/50">
+          <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/60">
             Drag to orbit · Scroll to zoom · Click to read story
           </div>
         </div>

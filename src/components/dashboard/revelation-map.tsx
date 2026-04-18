@@ -255,7 +255,7 @@ export function RevelationMap() {
   }, []);
 
   return (
-    <div className="relative h-[calc(100vh-2rem)] w-full overflow-hidden rounded-xl">
+    <div className="relative h-dvh w-full overflow-hidden rounded-xl">
       <Map
         ref={mapRef}
         initialViewState={{

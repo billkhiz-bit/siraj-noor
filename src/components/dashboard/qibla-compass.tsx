@@ -174,15 +174,29 @@ export function QiblaCompass({ size = "compact" }: QiblaCompassProps = {}) {
       }
     }
 
+    setOrientationEnabled(true);
+  }
+
+  // Attach the deviceorientation listener only while live orientation is
+  // enabled. The useEffect-with-cleanup shape means we never leak a
+  // handler when the component unmounts or the user switches back to
+  // the static N-up view.
+  useEffect(() => {
+    if (!orientationEnabled) return;
+    if (typeof window === "undefined") return;
+
     function handler(e: DeviceOrientationEvent) {
       const heading =
         (e as unknown as { webkitCompassHeading?: number }).webkitCompassHeading ??
         e.alpha;
       if (typeof heading === "number") setDeviceHeading(heading);
     }
+
     window.addEventListener("deviceorientation", handler, true);
-    setOrientationEnabled(true);
-  }
+    return () => {
+      window.removeEventListener("deviceorientation", handler, true);
+    };
+  }, [orientationEnabled]);
 
   const needleRotation = useMemo(() => {
     if (!location) return 0;

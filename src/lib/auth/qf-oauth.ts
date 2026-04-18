@@ -185,9 +185,16 @@ export async function completeLogin(
         });
 
     if (!response.ok) {
+      // Truncate upstream body aggressively before bubbling. Hydra error
+      // payloads can echo the authorisation `code`, request fragments,
+      // and internal debug strings, any of which can leak into the
+      // callback page UI + the console if we pass the full text through.
+      // 160 chars is enough to preserve the OAuth error name + a short
+      // message without relaying credentials.
       const text = await response.text().catch(() => "");
+      const trimmed = text.length > 160 ? `${text.slice(0, 160)}…` : text;
       throw new Error(
-        `Token exchange failed (${response.status}): ${text || response.statusText}`
+        `Token exchange failed (${response.status}): ${trimmed || response.statusText}`
       );
     }
 

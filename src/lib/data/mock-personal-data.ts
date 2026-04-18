@@ -68,7 +68,6 @@ export const MOCK_COLLECTIONS: Collection[] = [
     name: "Verses for hard days",
     description:
       "Short reminders I turn to when the week feels heavier than usual.",
-    bookmarks_count: 7,
     created_at: "2026-03-28T09:00:00Z",
   },
   {
@@ -76,14 +75,12 @@ export const MOCK_COLLECTIONS: Collection[] = [
     name: "Ayahs that made me pause",
     description:
       "Moments in recitation where I had to stop and sit with what I'd just read.",
-    bookmarks_count: 12,
     created_at: "2026-03-15T17:45:00Z",
   },
   {
     id: "mock-collection-3",
     name: "Before Fajr",
     description: "My short morning rotation, one surah at a time.",
-    bookmarks_count: 4,
     created_at: "2026-02-22T05:30:00Z",
   },
 ];
@@ -114,7 +111,6 @@ function mockSession(
     chapter_id: chapterId,
     verse_key: verseKey,
     created_at: isoDaysAgo(daysAgo, hour),
-    duration_seconds: 180 + (daysAgo % 7) * 30,
   };
 }
 

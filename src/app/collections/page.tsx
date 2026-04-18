@@ -189,17 +189,9 @@ export default function CollectionsPage() {
                   )}
                 </div>
                 {collection.description && (
-                  <p className="mb-4 text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {collection.description}
                   </p>
-                )}
-                {typeof collection.bookmarks_count === "number" && (
-                  <div className="border-t border-border/60 pt-3 text-xs text-muted-foreground">
-                    <span className="font-mono text-foreground">
-                      {collection.bookmarks_count}
-                    </span>{" "}
-                    ayah{collection.bookmarks_count === 1 ? "" : "s"}
-                  </div>
                 )}
               </article>
             ))}

@@ -37,7 +37,7 @@ const MILESTONE_DATA: Record<number, Milestone> = {
     days: 100,
     title: "One hundred",
     blurb:
-      "Three months and change. You&apos;ve built something real. May the next hundred be steadier still.",
+      "Three months and change. You've built something real. May the next hundred be steadier still.",
   },
   365: {
     days: 365,
@@ -66,11 +66,13 @@ export function StreakCelebration() {
     if (localStorage.getItem(key) === "true") return;
 
     localStorage.setItem(key, "true");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActive(MILESTONE_DATA[hit]);
 
     const timer = window.setTimeout(() => setActive(null), 5500);
     return () => window.clearTimeout(timer);
+    // streak is a plain StreakInfo object (not a ref) — depending on
+    // streak.current is correct and does re-trigger on context updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady, isAuthenticated, streak.current, user?.sub]);
 
   if (!active) return null;
@@ -112,11 +114,9 @@ export function StreakCelebration() {
           <h2 className="mb-3 text-2xl font-semibold text-foreground">
             {active.title}
           </h2>
-          <p
-            className="text-sm leading-relaxed text-foreground/80"
-            // Allow &apos; entities in the blurb text
-            dangerouslySetInnerHTML={{ __html: active.blurb }}
-          />
+          <p className="text-sm leading-relaxed text-foreground/80">
+            {active.blurb}
+          </p>
           <button
             type="button"
             onClick={() => setActive(null)}

@@ -149,8 +149,12 @@ export interface Bookmark {
 export interface Collection {
   id: string;
   name: string;
+  // description lives client-side only. QF's POST /collections rejects
+  // `additionalProperties`, so any description the user types in the
+  // composer is held in memory + localStorage for this browser rather
+  // than persisted to the server. See CollectionsProvider for the
+  // optimistic reconciliation.
   description?: string;
-  bookmarks_count?: number;
   created_at?: string;
 }
 
@@ -158,7 +162,6 @@ export interface ReadingSession {
   id: string;
   verse_key?: string;
   chapter_id?: number;
-  duration_seconds?: number;
   created_at: string;
 }
 
@@ -274,16 +277,11 @@ export const qfApi = {
     );
     return { bookmarks: env.data.map(toBookmark) };
   },
-  createBookmark: async (
-    verseKey: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _note?: string
-  ): Promise<Bookmark> => {
+  createBookmark: async (verseKey: string): Promise<Bookmark> => {
     // QF POST /bookmarks takes {key, verseNumber, mushaf, type:"ayah"} -
     // no free-form `note` field (OpenAPI says additionalProperties:false,
-    // so sending it would 422). We split the "chapter:verse" string the
-    // UI passes in. Silently drop `note` for now; add it back if QF ever
-    // exposes a note field.
+    // so sending it would 422). Notes are kept client-side by the
+    // BookmarksProvider; the QF trip does not carry reflection text.
     const [ch, vs] = verseKey.split(":").map((s) => parseInt(s, 10));
     if (Number.isNaN(ch) || Number.isNaN(vs)) {
       throw new QfApiError(`Invalid verse_key: ${verseKey}`, 400);
@@ -323,12 +321,10 @@ export const qfApi = {
     );
     return { collections: env.data.map(toCollection) };
   },
-  createCollection: async (
-    name: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _description?: string
-  ): Promise<Collection> => {
+  createCollection: async (name: string): Promise<Collection> => {
     // QF POST /collections accepts only {name} (additionalProperties:false).
+    // Descriptions the user types in the composer are kept client-side
+    // by CollectionsProvider, not sent to QF.
     const env = await qfFetch(
       "/collections",
       singleEnvelope(qfCollectionSchema),

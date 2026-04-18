@@ -159,6 +159,13 @@ export function TodayPanel() {
                   day{streak.current === 1 ? "" : "s"}
                 </span>
               </p>
+              {/* QF's v1 User API doesn't expose a longest-streak claim,
+                  so signed-in users hit the `longest === 0` branch and
+                  this chip stays hidden. Mock preview (unauthenticated
+                  view) sets longest > 0 explicitly so the chip renders.
+                  Client-side derivation from paginated sessions was
+                  considered but would require fetching the full reading
+                  history per page visit - wasteful for a UI chip. */}
               {streak.longest > 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">
                   Longest: {streak.longest} days

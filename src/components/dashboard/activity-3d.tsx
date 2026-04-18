@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Text, Stars } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import type { ReadingSession } from "@/lib/qf-user-api";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 const DAYS = 365;
 const ROWS = 7;
@@ -68,7 +69,11 @@ interface CellMeshProps {
   selected: boolean;
 }
 
-function CellMesh({ cell, onHover, onClick, hovered, selected }: CellMeshProps) {
+// Wrapped in React.memo so that a hover on cell N doesn't re-render
+// the other 364 cells. Parent's hovered/selected state flips trigger a
+// re-render on every child by default; the memo stops propagation for
+// cells whose own `hovered`/`selected` booleans haven't flipped.
+const CellMesh = memo(function CellMesh({ cell, onHover, onClick, hovered, selected }: CellMeshProps) {
   const ref = useRef<THREE.Mesh>(null);
 
   const intensity = Math.min(cell.count / SATURATE_AT, 1);
@@ -146,7 +151,7 @@ function CellMesh({ cell, onHover, onClick, hovered, selected }: CellMeshProps) 
       />
     </mesh>
   );
-}
+});
 
 function FloorPlate() {
   const width = COLS * (CELL_SIZE + CELL_GAP) + 1;
@@ -178,6 +183,7 @@ function Scene({
   hoveredIndex: number | null;
   selectedIndex: number | null;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <>
       <ambientLight intensity={0.45} />
@@ -224,7 +230,7 @@ function Scene({
         minPolarAngle={0.2}
         maxPolarAngle={Math.PI / 2.15}
         target={[0, 1.5, 0]}
-        autoRotate
+        autoRotate={!reducedMotion}
         autoRotateSpeed={0.25}
         keyEvents={false}
       />

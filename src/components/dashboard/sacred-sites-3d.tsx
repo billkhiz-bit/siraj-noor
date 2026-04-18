@@ -311,22 +311,25 @@ function Compass() {
   );
 }
 
+// Per-site initial camera positions. Hoisted to module scope so the
+// record isn't re-allocated on every useFrame tick (previously lived
+// inside CameraAnimator, re-created 60 times per second).
+const CAMERA_POSITIONS: Record<string, [number, number, number]> = {
+  kaabah: [4, 3, 6],
+  "masjid-nabawi": [5, 5, 10],
+  "mount-uhud": [0, 6, 12],
+  "cave-hira": [3, 5, 8],
+  "cave-thawr": [3, 4, 9],
+  arafat: [3, 5, 12],
+};
+
 // Camera animation on site change
-function CameraAnimator({ site, controlsRef }: { site: SacredSite; controlsRef: React.MutableRefObject<{ target: THREE.Vector3; object: { position: THREE.Vector3 } } | null> }) {
+function CameraAnimator({ site, controlsRef }: { site: SacredSite; controlsRef: React.RefObject<{ target: THREE.Vector3; object: { position: THREE.Vector3 } } | null> }) {
   const prevSite = useRef(site.id);
   const animating = useRef(false);
   const startPos = useRef(new THREE.Vector3());
   const targetPos = useRef(new THREE.Vector3());
   const progress = useRef(0);
-
-  const CAMERA_POSITIONS: Record<string, [number, number, number]> = {
-    kaabah: [4, 3, 6],
-    "masjid-nabawi": [5, 5, 10],
-    "mount-uhud": [0, 6, 12],
-    "cave-hira": [3, 5, 8],
-    "cave-thawr": [3, 4, 9],
-    arafat: [3, 5, 12],
-  };
 
   useFrame(() => {
     if (prevSite.current !== site.id) {
@@ -447,9 +450,13 @@ export function SacredSites3D() {
   const [selectedAnnotation, setSelectedAnnotation] = useState(-1);
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] w-full gap-3 overflow-hidden rounded-xl">
+    <div className="flex h-dvh w-full gap-3 overflow-hidden rounded-xl">
       {/* 3D Canvas - left side */}
-      <div className="relative flex-1 overflow-hidden rounded-xl bg-[#030308]">
+      <div
+        className="relative flex-1 overflow-hidden rounded-xl bg-[#030308]"
+        role="img"
+        aria-label="Interactive 3D wireframe models of five sacred Islamic sites with annotation pins and particle effects. Click an annotation to read its historical context."
+      >
         <Canvas
           camera={{ position: [0, 3, 8], fov: 50 }}
           gl={{ antialias: true, alpha: false }}
@@ -466,16 +473,16 @@ export function SacredSites3D() {
         <div className="pointer-events-none absolute left-4 top-3">
           <p className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500">Sacred Sites</p>
         </div>
-        <div className="pointer-events-none absolute bottom-3 right-4 font-mono text-[10px] text-muted-foreground/40">
+        <div className="pointer-events-none absolute bottom-3 right-4 font-mono text-[10px] text-muted-foreground/60">
           DRAG TO ROTATE · SCROLL TO ZOOM
         </div>
-        <div className="pointer-events-none absolute bottom-3 left-4 font-mono text-[10px] text-muted-foreground/40">
+        <div className="pointer-events-none absolute bottom-3 left-4 font-mono text-[10px] text-muted-foreground/60">
           {sacredSites.findIndex(s => s.id === selectedSite.id) + 1} / {sacredSites.length}
         </div>
         {/* Coordinates HUD */}
         <div className="pointer-events-none absolute right-4 top-3 font-mono text-[10px]">
-          <span className="text-muted-foreground/50">{selectedSite.lat.toFixed(4)}°N {selectedSite.lon.toFixed(4)}°E</span>
-          {selectedSite.elevation && <span className="ml-2 text-muted-foreground/50">{selectedSite.elevation}m</span>}
+          <span className="text-muted-foreground/60">{selectedSite.lat.toFixed(4)}°N {selectedSite.lon.toFixed(4)}°E</span>
+          {selectedSite.elevation && <span className="ml-2 text-muted-foreground/60">{selectedSite.elevation}m</span>}
         </div>
       </div>
 
@@ -533,7 +540,7 @@ export function SacredSites3D() {
                 );
               })}
             </div>
-            <div className="mt-1 flex justify-between font-mono text-[9px] text-muted-foreground/50">
+            <div className="mt-1 flex justify-between font-mono text-[9px] text-muted-foreground/60">
               <span>0m</span>
               <span>{selectedSite.elevation}m</span>
             </div>

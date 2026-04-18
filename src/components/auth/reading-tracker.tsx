@@ -88,11 +88,10 @@ export function ReadingTracker({ chapterId, ayatCount }: ReadingTrackerProps) {
     let inFlight = false;
     const flushActivity = (options: { final?: boolean } = {}) => {
       if (inFlight) return;
-      if (!options.final && activityFlushedRef.current) {
-        // On periodic flushes we want to allow repeated flushes,
-        // so we reset the guard each time. On final flush
-        // (unmount/hidden) we use the guard to prevent double-fires.
-      }
+      // Double-fire protection for the terminal flush (unmount/pagehide).
+      // Periodic ticks don't set activityFlushedRef, so they remain free
+      // to repeat - each periodic flush resets `startRef` below.
+      if (options.final && activityFlushedRef.current) return;
       const elapsedSeconds = Math.floor(
         (Date.now() - startRef.current) / 1000
       );

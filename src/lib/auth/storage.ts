@@ -15,7 +15,14 @@ export interface StoredPkce {
   nonce: string;
   redirectUri: string;
   returnTo: string;
+  createdAt: number;
 }
+
+// Abandoned logins leave codeVerifier + state behind in sessionStorage.
+// 10 minutes covers almost every real-world auth flow (the Hydra code
+// has a 60-second lifetime anyway); older entries are stale and get
+// evicted so they can't be picked up by a later, unrelated login.
+const PKCE_TTL_MS = 10 * 60 * 1000;
 
 const tokenListeners = new Set<() => void>();
 function notifyTokenListeners(): void {
@@ -86,9 +93,10 @@ export function clearTokens(): void {
   notifyTokenListeners();
 }
 
-export function savePkce(pkce: StoredPkce): void {
+export function savePkce(pkce: Omit<StoredPkce, "createdAt">): void {
   if (typeof window === "undefined") return;
-  sessionStorage.setItem(PKCE_KEY, JSON.stringify(pkce));
+  const entry: StoredPkce = { ...pkce, createdAt: Date.now() };
+  sessionStorage.setItem(PKCE_KEY, JSON.stringify(entry));
 }
 
 export function loadPkce(): StoredPkce | null {
@@ -96,7 +104,17 @@ export function loadPkce(): StoredPkce | null {
   const raw = sessionStorage.getItem(PKCE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as StoredPkce;
+    const parsed = JSON.parse(raw) as StoredPkce;
+    // Reject stale entries so a login abandoned yesterday can't be
+    // picked up when the user starts a fresh flow now.
+    if (
+      typeof parsed.createdAt !== "number" ||
+      Date.now() - parsed.createdAt > PKCE_TTL_MS
+    ) {
+      sessionStorage.removeItem(PKCE_KEY);
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }

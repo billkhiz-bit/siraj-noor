@@ -219,7 +219,7 @@ export function RevelationTimeline() {
 
         {/* Tick rail */}
         <div className="absolute inset-x-0 top-5 flex h-2 items-end gap-[1px]">
-          {ordered.map((surah, i) => {
+          {ordered.map((surah) => {
             const state = classify(surah, revealedCount, playheadIdx);
             const colour =
               state === "future"

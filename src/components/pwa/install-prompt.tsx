@@ -93,8 +93,12 @@ export function InstallPrompt() {
   if (!isVisible || !promptEvent) return null;
 
   return (
+    // Non-blocking promotional banner, not a modal. `role="region"` is
+    // the accurate semantic - the user can continue interacting with
+    // the page behind it. A true dialog would need focus-trap + Escape
+    // handling, which is overkill for an optional install CTA.
     <div
-      role="dialog"
+      role="region"
       aria-label="Install Siraj Noor"
       className="fixed bottom-4 right-4 z-50 w-[min(360px,calc(100vw-2rem))] rounded-xl border border-amber-500/30 bg-card/95 p-4 shadow-2xl shadow-black/40 backdrop-blur"
     >

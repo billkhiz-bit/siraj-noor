@@ -17,7 +17,8 @@
 // verse. Worthwhile simplification; panels can re-fetch cheaply from
 // the browser cache.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import DOMPurify from "dompurify";
 import { fetchTafsir, type Tafsir } from "@/lib/quran-api";
 import {
   TAFSIR_PRESETS,
@@ -25,6 +26,30 @@ import {
   loadTafsirPreference,
   saveTafsirPreference,
 } from "@/lib/tafsir-presets";
+
+// Whitelist tailored to the actual HTML shapes tafsir content uses.
+// Keeps the typographic tags we style for and the inline Arabic span,
+// drops scripts, event handlers, inline styles, iframes, images, forms.
+const TAFSIR_SANITIZE_CONFIG: Parameters<typeof DOMPurify.sanitize>[1] = {
+  ALLOWED_TAGS: [
+    "p",
+    "br",
+    "span",
+    "em",
+    "i",
+    "strong",
+    "b",
+    "sup",
+    "sub",
+    "blockquote",
+    "a",
+    "ul",
+    "ol",
+    "li",
+  ],
+  ALLOWED_ATTR: ["href", "target", "rel", "lang", "dir"],
+  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|#)/i,
+};
 
 interface TafsirButtonProps {
   verseKey: string;
@@ -87,6 +112,11 @@ export function TafsirPanel({ verseKey }: TafsirPanelProps) {
   const [loading, setLoading] = useState(true);
   const quranComUrl = `https://quran.com/${verseKey.replace(":", "/")}/tafsirs`;
 
+  const sanitisedText = useMemo(
+    () => (tafsir ? DOMPurify.sanitize(tafsir.text, TAFSIR_SANITIZE_CONFIG) : ""),
+    [tafsir],
+  );
+
   useEffect(() => {
     // Hydrate the user's saved tafsir preference after first paint.
     // setState-in-effect is intentional: SSR and first client render
@@ -104,11 +134,19 @@ export function TafsirPanel({ verseKey }: TafsirPanelProps) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setTafsir(null);
-    fetchTafsir(verseKey, tafsirId).then((t) => {
-      if (cancelled) return;
-      setTafsir(t);
-      setLoading(false);
-    });
+    fetchTafsir(verseKey, tafsirId)
+      .then((t) => {
+        if (cancelled) return;
+        setTafsir(t);
+        setLoading(false);
+      })
+      .catch(() => {
+        // fetchTafsir swallows errors internally and returns null, so
+        // this only fires if that changes. Fall back to the "couldn't
+        // be loaded" message instead of leaving a permanent skeleton.
+        if (cancelled) return;
+        setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -151,9 +189,14 @@ export function TafsirPanel({ verseKey }: TafsirPanelProps) {
             )}
           </div>
 
-          {/* Tafsir picker */}
+          {/* Tafsir picker. Intentionally NOT radio semantics: WAI-ARIA
+              radiogroup requires arrow-key navigation between radios,
+              and re-implementing that on non-native elements is easy to
+              get subtly wrong. Treating the chips as toggle buttons with
+              aria-pressed is honest and keyboard-friendly - each chip is
+              individually tabbable, Enter/Space selects. */}
           <div
-            role="radiogroup"
+            role="group"
             aria-label="Choose a tafsir source"
             className="mt-3 flex flex-wrap gap-1.5"
           >
@@ -163,8 +206,7 @@ export function TafsirPanel({ verseKey }: TafsirPanelProps) {
                 <button
                   key={preset.id}
                   type="button"
-                  role="radio"
-                  aria-checked={isActive}
+                  aria-pressed={isActive}
                   onClick={() => handleSelect(preset.id)}
                   className={`inline-flex h-9 items-center rounded-full border px-3 text-[11px] font-medium transition-colors md:h-8 ${
                     isActive
@@ -229,7 +271,7 @@ export function TafsirPanel({ verseKey }: TafsirPanelProps) {
                 "[&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-foreground/75",
                 "[&_a]:text-amber-400 [&_a]:underline-offset-4 hover:[&_a]:underline",
               ].join(" ")}
-              dangerouslySetInnerHTML={{ __html: tafsir.text }}
+              dangerouslySetInnerHTML={{ __html: sanitisedText }}
             />
 
             <footer className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-3 text-[10px]">

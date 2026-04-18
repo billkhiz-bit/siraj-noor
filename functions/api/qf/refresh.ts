@@ -11,6 +11,7 @@ interface Env {
   QF_CLIENT_ID: string;
   QF_CLIENT_SECRET: string;
   QF_TOKEN_ENDPOINT?: string;
+  QF_ALLOW_DEV_ORIGINS?: string;
 }
 
 interface EventContext {
@@ -27,12 +28,16 @@ const DEFAULT_TOKEN_ENDPOINT =
 
 // Same Origin allowlist as token.ts. Refresh proxy is even more sensitive
 // than token exchange: an attacker with a stolen refresh_token plus an
-// open proxy can mint fresh access tokens indefinitely.
-const ALLOWED_ORIGINS = new Set([
-  "https://siraj-noor.pages.dev",
-  "http://localhost:3000",
-  "http://localhost:3001",
-]);
+// open proxy can mint fresh access tokens indefinitely. Localhost is
+// gated on QF_ALLOW_DEV_ORIGINS so prod deploys reject dev origins.
+function buildAllowedOrigins(env: Env): Set<string> {
+  const origins = new Set<string>(["https://siraj-noor.pages.dev"]);
+  if (env.QF_ALLOW_DEV_ORIGINS === "true") {
+    origins.add("http://localhost:3000");
+    origins.add("http://localhost:3001");
+  }
+  return origins;
+}
 
 const MAX_BODY_BYTES = 4096;
 
@@ -59,7 +64,7 @@ export const onRequestPost = async ({
   env,
 }: EventContext): Promise<Response> => {
   const origin = request.headers.get("origin");
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) {
+  if (!origin || !buildAllowedOrigins(env).has(origin)) {
     return jsonError(
       403,
       "forbidden_origin",
@@ -125,7 +130,18 @@ export const onRequestPost = async ({
     );
   }
 
+  // Same content-type guard as token.ts - only forward JSON bodies so
+  // Hydra HTML stack traces / 5xx pages don't leak through as JSON.
   const body = await upstream.text();
+  const upstreamContentType = upstream.headers.get("content-type") ?? "";
+  const looksLikeJson = upstreamContentType.includes("application/json");
+  if (!looksLikeJson) {
+    return jsonError(
+      upstream.ok ? 502 : upstream.status,
+      "upstream_error",
+      `Quran Foundation returned a non-JSON response (status ${upstream.status}).`
+    );
+  }
   return new Response(body, {
     status: upstream.status,
     headers: { "content-type": "application/json" },

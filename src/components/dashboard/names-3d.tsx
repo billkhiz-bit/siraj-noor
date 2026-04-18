@@ -6,6 +6,7 @@ import { OrbitControls, Text, Stars, Billboard } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { namesOfAllah, categoryColours, type NameOfAllah } from "@/lib/data/names-of-allah";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 type FilterMode = "all" | "beauty" | "majesty" | "perfection";
 
@@ -145,6 +146,7 @@ function Scene({
   hoveredName: NameOfAllah | null;
   onHover: (n: NameOfAllah | null) => void;
 }) {
+  const reducedMotion = useReducedMotion();
   const filtered = useMemo(() => {
     if (filter === "all") return namesOfAllah;
     return namesOfAllah.filter((n) => n.category === filter);
@@ -180,7 +182,7 @@ function Scene({
         enablePan={false}
         minDistance={6}
         maxDistance={25}
-        autoRotate
+        autoRotate={!reducedMotion}
         autoRotateSpeed={0.15}
         keyEvents={false}
       />
@@ -203,7 +205,11 @@ export function Names3D() {
   }), []);
 
   return (
-    <div className="relative h-[calc(100vh-2rem)] w-full overflow-hidden rounded-xl bg-[#030308]">
+    <div
+      className="relative h-dvh w-full overflow-hidden rounded-xl bg-[#030308]"
+      role="img"
+      aria-label="Interactive 3D sphere of the ninety-nine Names of Allah with Allah at the centre. Click a name to read its meaning, source, and a short reflection. Filter by theme: beauty, majesty, or perfection."
+    >
       <Canvas
         camera={{ position: [0, 0, 16], fov: 50 }}
         gl={{ antialias: true, alpha: false }}
@@ -298,7 +304,7 @@ export function Names3D() {
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-5 right-5 font-mono text-[10px] text-muted-foreground/40">
+      <div className="pointer-events-none absolute bottom-5 right-5 font-mono text-[10px] text-muted-foreground/60">
         DRAG TO ORBIT · SCROLL TO ZOOM
       </div>
     </div>

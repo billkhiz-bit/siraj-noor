@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import {
@@ -15,6 +15,7 @@ import * as THREE from "three";
 import { surahs, type Surah } from "@/lib/data/surahs";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useKeyboardNav } from "@/hooks/use-keyboard-nav";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useReadingProgress } from "@/lib/auth/reading-progress-context";
 
 type SortMode = "canonical" | "revelation" | "length";
@@ -269,7 +270,7 @@ function CentreText() {
 }
 
 function Scene({
-  sortMode,
+  sortedData,
   hoveredSurah,
   selectedIndex,
   readSurahs,
@@ -277,30 +278,22 @@ function Scene({
   onClick,
   controlsRef,
 }: {
-  sortMode: SortMode;
+  sortedData: Surah[];
   hoveredSurah: Surah | null;
   selectedIndex: number;
   readSurahs: Set<number>;
   onHover: (s: Surah | null) => void;
   onClick: (s: Surah) => void;
-  controlsRef: React.MutableRefObject<{ zoomIn: () => void; zoomOut: () => void } | null>;
+  controlsRef: React.RefObject<{ zoomIn: () => void; zoomOut: () => void } | null>;
 }) {
   const orbitRef = useRef<never>(null);
+  const reducedMotion = useReducedMotion();
 
-  const sortedData = useMemo(() => {
-    const data = [...surahs];
-    switch (sortMode) {
-      case "revelation":
-        return data.sort((a, b) => a.revelationOrder - b.revelationOrder);
-      case "length":
-        return data.sort((a, b) => b.ayatCount - a.ayatCount);
-      default:
-        return data.sort((a, b) => a.number - b.number);
-    }
-  }, [sortMode]);
-
-  // Expose zoom controls to parent
-  useFrame(() => {
+  // Expose zoom controls to parent once. Previously the ref-assignment
+  // happened on every useFrame tick, re-allocating the { zoomIn, zoomOut }
+  // object + two closures ~60 times per second. The inner closures read
+  // orbitRef.current lazily so assigning once at mount is sufficient.
+  useEffect(() => {
     controlsRef.current = {
       zoomIn: () => {
         const ctrl = orbitRef.current as unknown as { dollyIn: (s: number) => void; update: () => void } | null;
@@ -317,7 +310,10 @@ function Scene({
         }
       },
     };
-  });
+    return () => {
+      controlsRef.current = null;
+    };
+  }, [controlsRef]);
 
   return (
     <>
@@ -370,7 +366,7 @@ function Scene({
         maxDistance={40}
         minPolarAngle={0.2}
         maxPolarAngle={Math.PI / 2.1}
-        autoRotate
+        autoRotate={!reducedMotion}
         autoRotateSpeed={0.3}
         target={[0, 3, 0]}
         keyEvents={false}
@@ -464,7 +460,11 @@ export function Surah3DChart() {
       </div>
 
       {/* 3D Canvas */}
-      <div className="relative h-[350px] w-full overflow-hidden rounded-xl border border-border bg-[#050510] md:h-[560px]">
+      <div
+        className="relative h-[350px] w-full overflow-hidden rounded-xl border border-border bg-[#050510] md:h-[560px]"
+        role="img"
+        aria-label="Interactive 3D cylindrical ring of the 114 surahs of the Qur'an. Colour-coded by revelation type: cyan for Meccan, violet for Medinan. Surahs already read pulse with an amber ring. Use arrow keys or click to select."
+      >
         <Canvas
           shadows
           camera={{ position: [0, 14, 22], fov: 42 }}
@@ -476,7 +476,7 @@ export function Surah3DChart() {
           }}
         >
           <Scene
-            sortMode={sortMode}
+            sortedData={sortedData}
             hoveredSurah={hoveredSurah}
             selectedIndex={selectedIndex}
             readSurahs={readSurahs}
@@ -521,7 +521,7 @@ export function Surah3DChart() {
         )}
 
         {/* Keyboard hints */}
-        <div className="pointer-events-none absolute right-6 bottom-6 space-y-1 text-right text-xs text-muted-foreground/50">
+        <div className="pointer-events-none absolute right-6 bottom-6 space-y-1 text-right text-xs text-muted-foreground/60">
           <p>← → Navigate surahs</p>
           <p>↑ ↓ Zoom · Enter to explore</p>
           <p>Drag to orbit · Scroll to zoom</p>
@@ -529,7 +529,7 @@ export function Surah3DChart() {
 
         {/* Selected surah counter */}
         {selectedIndex >= 0 && (
-          <div className="pointer-events-none absolute right-6 top-6 font-mono text-xs text-muted-foreground/50">
+          <div className="pointer-events-none absolute right-6 top-6 font-mono text-xs text-muted-foreground/60">
             {selectedIndex + 1} / {sortedData.length}
           </div>
         )}

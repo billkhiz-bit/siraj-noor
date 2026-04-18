@@ -32,6 +32,8 @@ export function VerseProgressIndicator({ verses }: VerseProgressIndicatorProps) 
       return;
     }
 
+    const pending = pendingRef.current;
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -41,20 +43,20 @@ export function VerseProgressIndicator({ verses }: VerseProgressIndicatorProps) 
 
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             // Start a dwell timer - verse must stay in view DWELL_MS to count
-            if (!pendingRef.current.has(key)) {
+            if (!pending.has(key)) {
               const timer = window.setTimeout(() => {
                 readRef.current.add(key);
-                pendingRef.current.delete(key);
+                pending.delete(key);
                 setReadCount(readRef.current.size);
               }, DWELL_MS);
-              pendingRef.current.set(key, timer);
+              pending.set(key, timer);
             }
           } else {
             // Left view before dwell completed - clear the pending timer
-            const timer = pendingRef.current.get(key);
+            const timer = pending.get(key);
             if (timer !== undefined) {
               window.clearTimeout(timer);
-              pendingRef.current.delete(key);
+              pending.delete(key);
             }
           }
         }
@@ -87,8 +89,8 @@ export function VerseProgressIndicator({ verses }: VerseProgressIndicatorProps) 
     return () => {
       observer.disconnect();
       revealObserver?.disconnect();
-      pendingRef.current.forEach((timer) => window.clearTimeout(timer));
-      pendingRef.current.clear();
+      pending.forEach((timer) => window.clearTimeout(timer));
+      pending.clear();
     };
   }, [verses.length]);
 

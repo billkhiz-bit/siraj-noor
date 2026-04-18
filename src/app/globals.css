@@ -135,9 +135,24 @@
     scroll-behavior: smooth;
   }
 
+  /*
+   * Respect the OS-level "reduce motion" preference. Strips smooth
+   * scrolling, CSS keyframe animations (pulses, pings, twinkles,
+   * splash fades), and transitions across the whole app. Three.js
+   * useFrame loops aren't covered here - where 3D rotation is
+   * decorative (autoRotate on hadith-explorer-3d, journeys-map, etc.)
+   * we gate the JS on the matchMedia query at the component level.
+   */
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
     }
   }
 

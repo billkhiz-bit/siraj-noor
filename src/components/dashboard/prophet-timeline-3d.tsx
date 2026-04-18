@@ -231,7 +231,11 @@ export function ProphetTimeline3D() {
       </div>
 
       <div className="relative flex flex-col gap-4 md:flex-row">
-        <div className={`relative overflow-hidden rounded-xl border border-border bg-[#0a0a1a] ${selectedProphet ? "h-[350px] w-full md:h-[560px] md:w-2/3" : "h-[350px] w-full md:h-[560px]"}`}>
+        <div
+          className={`relative overflow-hidden rounded-xl border border-border bg-[#0a0a1a] ${selectedProphet ? "h-[350px] w-full md:h-[560px] md:w-2/3" : "h-[350px] w-full md:h-[560px]"}`}
+          role="img"
+          aria-label="3D timeline of the twenty-five prophets named in the Qur'an, from Adam to Muhammad ﷺ. Click a prophet to read their story."
+        >
           <Canvas
             camera={{ position: [0, 8, 20], fov: 55 }}
             gl={{ antialias: true, alpha: false }}
@@ -270,7 +274,7 @@ export function ProphetTimeline3D() {
             </div>
           )}
 
-          <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/50">
+          <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/60">
             Drag to pan · Scroll to zoom · Click for story
           </div>
         </div>

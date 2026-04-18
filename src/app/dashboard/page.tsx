@@ -23,11 +23,15 @@ const Surah3DChart = dynamic(
   }
 );
 
-export default function DashboardPage() {
-  const longestSurah = surahs.reduce((a, b) =>
-    a.ayatCount > b.ayatCount ? a : b
-  );
+// Longest surah by ayat count is a function of the static surahs import,
+// so compute once at module scope instead of on every render. Al-Baqarah
+// today, and the underlying dataset doesn't change while the component
+// is mounted.
+const longestSurah = surahs.reduce((a, b) =>
+  a.ayatCount > b.ayatCount ? a : b
+);
 
+export default function DashboardPage() {
   return (
     <div className="flex h-dvh overflow-hidden">
       <IntroSplash />

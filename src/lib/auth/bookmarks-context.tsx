@@ -101,9 +101,15 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       };
       setBookmarks((current) => [optimistic, ...current]);
       try {
-        const created = await qfApi.createBookmark(verseKey, note);
+        const created = await qfApi.createBookmark(verseKey);
+        // Preserve the client-side `note` onto the reconciled bookmark
+        // object. QF never persists the reflection text, so merging it
+        // back here is what keeps the user's composed note visible on
+        // the bookmarks page for the remainder of the session.
         setBookmarks((current) =>
-          current.map((b) => (b.id === optimisticId ? created : b))
+          current.map((b) =>
+            b.id === optimisticId ? { ...created, note } : b
+          )
         );
       } catch {
         // Remove only the optimistic placeholder - leave any other

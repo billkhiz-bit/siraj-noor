@@ -85,13 +85,17 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
         id: optimisticId,
         name: trimmed,
         description,
-        bookmarks_count: 0,
       };
       setCollections((current) => [optimistic, ...current]);
       try {
-        const created = await qfApi.createCollection(trimmed, description);
+        const created = await qfApi.createCollection(trimmed);
+        // Preserve the client-side `description` onto the reconciled
+        // object. QF doesn't persist description so merging it back
+        // keeps the composed text visible for this session.
         setCollections((current) =>
-          current.map((c) => (c.id === optimisticId ? created : c))
+          current.map((c) =>
+            c.id === optimisticId ? { ...created, description } : c
+          )
         );
       } catch {
         setCollections((current) =>

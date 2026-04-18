@@ -16,6 +16,7 @@ interface Env {
   QF_CLIENT_ID: string;
   QF_CLIENT_SECRET: string;
   QF_REVOKE_ENDPOINT?: string;
+  QF_ALLOW_DEV_ORIGINS?: string;
 }
 
 interface EventContext {
@@ -31,11 +32,14 @@ interface RevokeRequestBody {
 const DEFAULT_REVOKE_ENDPOINT =
   "https://prelive-oauth2.quran.foundation/oauth2/revoke";
 
-const ALLOWED_ORIGINS = new Set([
-  "https://siraj-noor.pages.dev",
-  "http://localhost:3000",
-  "http://localhost:3001",
-]);
+function buildAllowedOrigins(env: Env): Set<string> {
+  const origins = new Set<string>(["https://siraj-noor.pages.dev"]);
+  if (env.QF_ALLOW_DEV_ORIGINS === "true") {
+    origins.add("http://localhost:3000");
+    origins.add("http://localhost:3001");
+  }
+  return origins;
+}
 
 const MAX_BODY_BYTES = 4096;
 
@@ -62,7 +66,7 @@ export const onRequestPost = async ({
   env,
 }: EventContext): Promise<Response> => {
   const origin = request.headers.get("origin");
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) {
+  if (!origin || !buildAllowedOrigins(env).has(origin)) {
     return jsonError(
       403,
       "forbidden_origin",

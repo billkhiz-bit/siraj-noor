@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { memo, useState, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Text, Stars } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import type { Verse } from "@/lib/quran-api";
 import type { Surah } from "@/lib/data/surahs";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 const LONG_VERSE_COLOUR = new THREE.Color("#f59e0b");
 const SHORT_VERSE_COLOUR = new THREE.Color("#34d399");
 
-function VerseBar({
+// Memoised so a hover on one bar doesn't invalidate the other N-1 bars;
+// Al-Baqarah alone has 286 verses, so this is a meaningful saving.
+const VerseBar = memo(function VerseBar({
   verse,
   index,
   total,
@@ -31,9 +34,14 @@ function VerseBar({
   const meshRef = useRef<THREE.Mesh>(null);
   const height = (verse.wordCount / maxWords) * 8;
 
-  // Colour gradient: short verses = green, long = amber
+  // Colour gradient: short verses = green, long = amber. Memoised so
+  // the interpolated Color is allocated once per (ratio) change rather
+  // than on every render.
   const ratio = verse.wordCount / maxWords;
-  const colour = new THREE.Color().lerpColors(SHORT_VERSE_COLOUR, LONG_VERSE_COLOUR, ratio);
+  const colour = useMemo(
+    () => new THREE.Color().lerpColors(SHORT_VERSE_COLOUR, LONG_VERSE_COLOUR, ratio),
+    [ratio]
+  );
 
   // Position in a line or arc depending on verse count
   const useArc = total > 30;
@@ -106,7 +114,7 @@ function VerseBar({
       )}
     </group>
   );
-}
+});
 
 function Scene({
   verses,
@@ -119,6 +127,7 @@ function Scene({
   onHover: (v: (Verse & { wordCount: number }) | null) => void;
   onClick: (v: (Verse & { wordCount: number })) => void;
 }) {
+  const reducedMotion = useReducedMotion();
   const maxWords = Math.max(...verses.map((v) => v.wordCount), 1);
 
   return (
@@ -149,7 +158,7 @@ function Scene({
         enablePan
         minDistance={5}
         maxDistance={35}
-        autoRotate={verses.length > 30}
+        autoRotate={!reducedMotion && verses.length > 30}
         autoRotateSpeed={0.2}
         target={[0, 2, 0]}
         keyEvents={false}
@@ -205,7 +214,11 @@ export function VerseVisualisation({
       </div>
 
       {/* 3D Canvas */}
-      <div className="relative h-[280px] w-full overflow-hidden rounded-xl border border-border bg-[#0a0a1a] md:h-[420px]">
+      <div
+        className="relative h-[280px] w-full overflow-hidden rounded-xl border border-border bg-[#0a0a1a] md:h-[420px]"
+        role="img"
+        aria-label="3D bar chart of the verses of the selected surah. Bar height encodes word count; emerald bars are short verses, amber bars are long. Click a bar to pin the ayah's translation."
+      >
         <Canvas
           camera={{ position: [0, 8, 16], fov: 55 }}
           gl={{ antialias: true, alpha: false }}
@@ -255,7 +268,7 @@ export function VerseVisualisation({
           </div>
         )}
 
-        <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/50">
+        <div className="pointer-events-none absolute right-6 bottom-6 text-xs text-muted-foreground/60">
           Drag to orbit · Scroll to zoom · Hover for text
         </div>
       </div>
