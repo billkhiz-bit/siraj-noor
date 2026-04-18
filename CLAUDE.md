@@ -10,6 +10,8 @@ Fork of Siraj built for the Quran Foundation Hackathon 2026 (Provision Launch, d
 **Parent project**: https://github.com/billkhiz-bit/siraj (original Siraj, frozen for Ramadan Hacks)
 **Local dev**: `cd C:\Users\bilal\projects\siraj-noor && npx next dev --port 3000`
 
+**Canonical clone path per device**: `C:\Users\bilal\projects\siraj-noor`. One clone per device, never two. Do NOT keep a parallel clone under `OneDrive\...` — on 2026-04-18 the OneDrive-synced copy and `projects\` copy diverged with two parallel audit branches because the user was on a different device (see commits `a5b2638` and `5465f41`). Resolved by superseding both branches and hard-resetting `projects\` to origin. Sync between devices via `git push` / `git pull` only — never via filesystem sync of `.git/`.
+
 ## Hackathon Eligibility
 The Quran Foundation Hackathon requires at least one Content API *and* one User API from Quran Foundation. Original Siraj only uses Content endpoints (via Qur'an.com API v4, which is the Quran Foundation content surface). This fork adds the User API layer to meet Phase 1 eligibility screening.
 
