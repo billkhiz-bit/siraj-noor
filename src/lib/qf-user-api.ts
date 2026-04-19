@@ -166,7 +166,7 @@ export interface ReadingSession {
   id: string;
   verse_key?: string;
   chapter_id?: number;
-  created_at: string;
+  created_at?: string;
 }
 
 // Full QF goal type enum per api-docs.quran.foundation. The UI only
@@ -225,8 +225,13 @@ const DEFAULT_PAGE_SIZE = 20;
 // ─── Adapters: QF wire shape → internal app shape ────────────────────
 
 function toBookmark(q: QfBookmark): Bookmark {
+  // QF's live server doesn't always populate the `type` field, so
+  // infer ayah-level vs surah-level from verseNumber presence. A
+  // non-null verseNumber means we have a precise ayah; otherwise the
+  // bookmark is a surah-level save keyed by chapter number alone.
+  const isAyah = q.type === "ayah" || q.verseNumber != null;
   const verse_key =
-    q.type === "ayah" && q.verseNumber != null
+    isAyah && q.verseNumber != null
       ? `${q.key}:${q.verseNumber}`
       : String(q.key);
   return {

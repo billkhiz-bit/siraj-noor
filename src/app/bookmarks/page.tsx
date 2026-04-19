@@ -85,11 +85,6 @@ export default function BookmarksPage() {
               showing sample bookmarks below. Your real saves will reappear
               automatically as soon as the connection recovers.
             </p>
-            {error && (
-              <p className="mt-2 break-words font-mono text-[11px] text-amber-300/80">
-                {error}
-              </p>
-            )}
           </div>
         )}
 

@@ -68,12 +68,14 @@ export function singleEnvelope<T extends z.ZodTypeAny>(data: T) {
 
 export const qfBookmarkSchema = z.object({
   id: z.string(),
-  createdAt: z.string(),
-  type: z.string(),
+  createdAt: z.string().optional(),
+  // `type` is marked required in the QF OpenAPI but the live server
+  // omits it entirely on some deployments (observed 2026-04-19 on
+  // prelive). Treated as optional so shape drift doesn't trip
+  // validation; the adapter falls back to verseNumber presence as the
+  // ayah/surah discriminator when this is absent.
+  type: z.string().optional(),
   key: z.number(),
-  // verseNumber is optional AND nullable per the QF schema. Surah-
-  // level bookmarks (type !== "ayah") omit it entirely, and ayah
-  // bookmarks with unusual metadata may send it as null.
   verseNumber: z.number().nullable().optional(),
   group: z.string().optional(),
   isInDefaultCollection: z.boolean().optional(),
@@ -83,17 +85,16 @@ export const qfBookmarkSchema = z.object({
 
 export const qfCollectionSchema = z.object({
   id: z.string(),
-  updatedAt: z.string(),
+  // updatedAt loosened to optional to match the same defensive pattern
+  // as bookmarks: QF's OpenAPI marks it required but it has been
+  // observed missing from some list rows.
+  updatedAt: z.string().optional(),
   name: z.string(),
 });
 
 export const qfReadingSessionSchema = z.object({
   id: z.string(),
-  updatedAt: z.string(),
-  // chapterNumber and verseNumber are optional per the QF schema.
-  // The only fields QF guarantees on every ReadingSession item are
-  // id and updatedAt; positional data is populated when the session
-  // was logged with explicit verse info but can be absent.
+  updatedAt: z.string().optional(),
   chapterNumber: z.number().optional(),
   verseNumber: z.number().optional(),
 });

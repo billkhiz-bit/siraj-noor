@@ -21,7 +21,7 @@
 // visit. The activate handler below deletes any cache whose name
 // doesn't match CACHE_NAME, so the old v1 cache is garbage-
 // collected on first activation after deploy.
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 const CACHE_NAME = `siraj-noor-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
