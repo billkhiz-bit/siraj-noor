@@ -1,0 +1,74 @@
+SIRAJ NOOR - PROVISION LAUNCH x QURAN FOUNDATION HACKATHON 2026
+SUBMISSION FORM ANSWERS - FINAL (copy-paste ready, no em dashes)
+================================================================
+
+
+--- LIVE DEMO LINK ---
+
+https://siraj-noor.pages.dev
+
+
+--- GITHUB REPOSITORY ---
+
+https://github.com/billkhiz-bit/siraj-noor
+
+
+--- DEMO VIDEO (2-3 MINUTES) ---
+
+[PASTE YOUR YOUTUBE / LOOM / GOOGLE DRIVE URL HERE ONCE RECORDED]
+
+Notes for recording (full beat sheet in DEMO_SCRIPT.md):
+- Target 2:30, hard cap 3:00.
+- Pre-seed before rolling: sign out and back in once so auth is fresh; have 3-4 bookmarks and 1-2 collections already on the account so Scene 3 and Scene 7 land; make sure no daily goal is set so Scene 4 can show the 5/10/15/30 preset buttons; clear any prior PWA install so Chrome's install icon appears fresh in Scene 7.
+- Must-keep scenes: OAuth sign-in (eligibility proof), daily goal set + progress fills after reading (User API habit loop), Activity 3D heatmap (10th view, User API only), PWA install (maintain-the-connection-after-Ramadan payoff).
+- Recommended upload: YouTube (unlisted) or Loom. Google Drive works but judges may hit permission walls - if using Drive, set link sharing to "Anyone with the link - Viewer" before pasting.
+
+
+================================================================
+PROJECT OVERVIEW - FINAL ANSWERS (as submitted by Bilal 2026-04-19)
+================================================================
+
+
+--- PROJECT NAME ---
+
+Siraj Noor
+
+
+--- ONE-SENTENCE SUMMARY ---
+
+An interactive 3D Qur'an and Hadith companion that makes the Qur'an structure visible and builds lasting reading habits through bookmarks, streaks, and daily goals synced to your Quran Foundation account.
+
+
+--- WHAT PROBLEM DOES YOUR PROJECT SOLVE? ---
+
+Siraj Noor is a tool to learn beyond reading the Qur'an and Hadith, not instead of. It is built for visual learners like me. Ten interactive 3D visualisations turn those structural and narrative layers into something you can click, rotate, and explore, which makes deeper engagement with Islam feel genuinely more engaging if your mind reaches for visual and spatial media. Every personal touchpoint (bookmarks, collections, reading sessions, streaks, daily goals) anchors to your Quran Foundation account, so the exploration and reading you do today compound into a lasting, cross-device practice tomorrow.
+
+
+--- HOW DOES YOUR PROJECT HELP PEOPLE ENGAGE WITH THE QURAN? ---
+
+The core idea is to make deeper engagement with the Qur'an and Hadith genuinely more engaging for visual learners, as a layer on top of reading and tafsir rather than a substitute for either. Siraj Noor spans four of the five engagement areas you listed:
+
+• Daily reading. Ayah of the Day and a deterministic Surah of the Day card anchor every visit. A Daily Goal card (5/10/15/30-minute presets) writes to the Quran Foundation goal scope; reading any surah fires /reading-sessions plus /activity-days, and the amber progress bar fills as the minutes accrue. The Surah Ring glows amber over surahs you've visited, so the Mushaf lights up as you cover it.
+
+• Understanding tafsir. Every ayah has a commentary icon that opens a panel with a three-scholar picker: Ibn Kathir (classical 14th-century), Ma'arif al-Qur'an (Mufti Shafi, jurisprudentially detailed), and Tazkirul Quran (Wahid Uddin Khan, contemporary plain English). Preference persists across verses.
+
+• Reflection. Click any ayah from any of the ten 3D views to bookmark it to your QF account, then group bookmarks into themed collections ("ayahs that made me pause") rendered as a CSS-perspective shelf. Bookmarks and collections sync across every device you sign in on.
+
+• Community and educational learning. The ten 3D views (Surah Structure ring, Isnad Network, Prophet Timeline, Revelation Map, Sacred Sites, 99 Names of Allah, Islamic Journeys, Hadith Explorer, Word Frequency, Activity heatmap) sit alongside traditional text study as an additional visual layer, giving teachers and students a way to see structural and relational concepts in space while still engaging with the text, tafsir, and classical sources in the usual way. Every visualisation is clickable: tap an isnad node for the narrator's biography, tap a prophet for their story and Qur'anic references, tap a sacred site for its elevation profile and verse citations.
+
+A streak counter, a streak-at-risk banner when 20+ hours have passed since the last session, and an installable Progressive Web App (one-tap install on desktop Chrome, Android, and iOS 17+) turn all of the above into a habit that outlives Ramadan.
+
+
+--- WHO IS THE PRIMARY AUDIENCE FOR YOUR APPLICATION? ---
+
+Visual learners first and foremost. People whose minds naturally reach for maps, diagrams, spatial layouts, timelines, and interactive media, and who want a way to go further with Islamic study beyond reading text alone. The app is designed to serve four overlapping groups well:
+
+• Visual learners (like me) who find interactive 3D views, networks, and maps a more natural way to hold relational concepts in their head. Reading the Qur'an and Hadith remains the foundation; Siraj Noor is the visual layer that makes deeper exploration feel engaging.
+
+• Teachers and Islamic studies educators who want visual aids to teach structural concepts alongside text study: surah order by revelation versus canonical arrangement, Isnad chains from the Prophet ﷺ to the Tabi' al-Tabi'in, the geography of Meccan versus Medinan revelation, the 10 historical journeys of the early community.
+
+• Habit-builders who want a visible, persistent reading streak, a daily goal with real progress tracking, and a Mushaf-coverage metric that follows them across every device they sign in on.
+
+• Muslim students and general users who already have a reading foundation in the Qur'an and Hadith and want an additional lens to explore deeper topics like narrator biographies, prophet chronology, and the 99 Names of Allah, and makes it easier to keep coming back day after day.
+
+Siraj Noor is a companion to reading the Qur'an and Hadith from their original sources, studying tafsir, and learning Islam from classical scholarship. It does not replace any of those; it extends what the user can already do with scripture into a visual, spatial, habit-forming layer built for the way visual learners actually think.

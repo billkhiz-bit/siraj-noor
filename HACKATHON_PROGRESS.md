@@ -693,3 +693,50 @@ Smoke-test post-deploy (trailing slashes required per `trailingSlash: true`):
 3. Record the 2:30 demo video per `DEMO_SCRIPT.md`.
 4. Lighthouse against `https://siraj-noor.pages.dev` + capture screenshots.
 5. Flip repo public on 2026-04-20 morning; paste `SUBMISSION.md` into the Provision Launch portal.
+
+---
+
+## Day 8 - 2026-04-19 (final submission prep)
+
+Day before submission. Three concurrent strands: flipping the repo public, catching two QF User API contract-drift bugs via pre-submission smoke testing, and locking in the Provision Launch form copy. Five commits + five production deploys.
+
+### Repo flipped to public
+
+`gh repo edit billkhiz-bit/siraj-noor --visibility public --accept-visibility-change-consequences`. Pre-flip secret scan: working tree clean (no AWS/Stripe/Google API key patterns, no hardcoded `client_secret`, no private keys); `.env.production` contains only public host URLs; `QF_CLIENT_SECRET` lives only in Cloudflare Pages Function env at runtime (verified across `functions/api/qf/{token,refresh,revoke}.ts`); `.env.local.example` has empty placeholder; no high-entropy literals found in git history via `git log -S` probes. Public client IDs in repo docs are intentionally public per the OAuth threat model.
+
+### Two contract-drift bugs caught via smoke test
+
+Both followed the same pattern: QF's live server diverges from the published OpenAPI spec. Neither was blocking eligibility (bookmarks/collections/streaks/reading-sessions remained fine), but both would have taken down visible parts of the demo.
+
+**1. `/goals/get-todays-plan` returned 422 `"mushafId" is required` (commit `52fbca1`).** The published OpenAPI at `api-docs.quran.foundation/openAPI/user-related-apis/v1.json` lists only `type` as required on this endpoint. Live server requires `mushafId` too. One-line fix adding `&mushafId=4` (Hafs) to the URL in `qfApi.getTodaysGoalPlan`. Error discovered by a one-deploy diagnostic (`b2a9513`) that replaced the goal card's generic "Couldn't load your daily goal right now" banner with the actual `QfApiError.status + message` (first 220 chars); reverted back to the friendly text once the fix was confirmed.
+
+**2. Bookmark rows missing `type` field on list responses (commit `e9cfe83`).** Bookmarks page was falling back to sample data with a shape-mismatch error. Iterative diagnostic: first enriched the per-provider error message (commit `ce5076f`), then expanded `qfFetch`'s `safeParse` failure to include the first Zod issue path + 140-char response body preview (commit `f79bc90`). That surfaced `shape mismatch at data.0.type: Invalid input: expected string, received undefined | body: {"success":true,"data":[{"id":"...","createdAt":"2026-04-16T...","key":2,"verseNumber":1,"isInD...`. QF omits `type` entirely despite the OpenAPI marking it required + `additionalProperties:false`. Fix: marked `type` optional on `qfBookmarkSchema`, updated `toBookmark` adapter to infer ayah vs surah from `verseNumber` presence. Preemptively loosened `updatedAt` on `qfCollectionSchema` and `qfReadingSessionSchema` for the same class of drift; made internal `ReadingSession.created_at` optional (all three consumers already null-check).
+
+All diagnostic verbose-error code reverted once the real fixes landed, so users see the clean friendly banners rather than raw JSON.
+
+### Deploy cadence
+
+Five production deploys today, all aliased to `siraj-noor.pages.dev`. SW `CACHE_VERSION` walked v3 → v8 so installed PWAs pick up fresh bundles on next open.
+
+| Commit | Deploy URL | Purpose |
+|---|---|---|
+| `b2a9513` | `2419d3a7.siraj-noor.pages.dev` | Diagnostic: goals banner verbose error |
+| `52fbca1` | `3b84b7b7.siraj-noor.pages.dev` | Fix: mushafId on /goals/get-todays-plan |
+| `ce5076f` | `b987ffbc.siraj-noor.pages.dev` | Diagnostic: bookmarks banner verbose error |
+| `f79bc90` | `8db65879.siraj-noor.pages.dev` | Diagnostic: Zod issue path in qfFetch errors |
+| `e9cfe83` | `83f00237.siraj-noor.pages.dev` | Fix: loosen bookmark/collection/session schemas |
+
+### Submission form answers finalised
+
+User wrote final Project Overview answers for the Provision Launch form. Voice-matched edits over the drafts: scripture-reading and tafsir study framed as the essential foundation, Siraj Noor as a visual-learner companion on top rather than a replacement; Mushaf and Isnad capitalised as proper nouns; em dashes stripped to hyphens. Saved verbatim to `SUBMISSION_FORM_ANSWERS.txt` at the project root with the Live Demo / GitHub / Demo Video URL stubs at the top for the next page of the form. The Project Overview block is now copy-paste ready for submission morning.
+
+### Day 8 still TODO
+
+1. Record the 2:30 demo video per `DEMO_SCRIPT.md` (still the single remaining eligibility-level deliverable).
+2. Lighthouse against production.
+3. Paste answers into Provision Launch portal and submit.
+
+### Lessons banked
+
+- **Trust runtime over spec for QF User API shape validation.** Two separate fields in two separate endpoints came back different from the published OpenAPI today. Default stance going forward: only `id` and truly-critical-to-adapter fields are required on Zod schemas for QF wire types; everything else optional + nullable where the spec allows.
+- **Surface errors in-UI for submission-critical flows, not just console.** Today's debug loop required three diagnostic deploys to escalate error detail up from `console.error` into visible banners. For any endpoint whose failure pulls in sample-data fallback, having even a one-line `font-mono text-[11px]` diagnostic under the banner would have saved the first round-trip. Cost is tiny; reverted when the real fix lands.
