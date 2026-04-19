@@ -415,8 +415,11 @@ export const qfApi = {
   getTodaysGoalPlan: async (
     type: GoalType = "QURAN_TIME"
   ): Promise<TodayGoalPlan> => {
+    // QF's live server requires mushafId on this endpoint even though
+    // the published OpenAPI lists only `type` as required. Sending
+    // DEFAULT_MUSHAF_ID (Hafs) matches the rest of the goals surface.
     const env = await qfFetch(
-      `/goals/get-todays-plan?type=${encodeURIComponent(type)}`,
+      `/goals/get-todays-plan?type=${encodeURIComponent(type)}&mushafId=${DEFAULT_MUSHAF_ID}`,
       singleEnvelope(qfTodayPlanSchema),
       { headers: { "x-timezone": currentTimezone() } }
     );
