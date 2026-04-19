@@ -123,8 +123,12 @@ async function qfFetch<S extends z.ZodTypeAny>(
       "\nResponse preview:",
       bodyText.slice(0, 300)
     );
+    const firstIssue = parsed.error.issues[0];
+    const issuePath = firstIssue?.path.join(".") || "(root)";
+    const issueMsg = firstIssue?.message || "unknown";
+    const preview = bodyText.slice(0, 140).replace(/\s+/g, " ");
     throw new QfApiError(
-      `Unexpected response shape from ${path}`,
+      `shape mismatch at ${issuePath}: ${issueMsg} | body: ${preview}`,
       response.status
     );
   }
