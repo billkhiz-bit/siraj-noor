@@ -120,10 +120,16 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error("[GoalsProvider] load failed:", err);
+      const detail =
+        err instanceof QfApiError
+          ? `${err.status} ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : String(err);
       setError(
         err instanceof QfApiError && err.status === 401
           ? "Sign-in session expired - sign in again."
-          : "Couldn't load your daily goal right now."
+          : `Couldn't load your daily goal: ${detail.slice(0, 220)}`
       );
     } finally {
       setIsLoading(false);
