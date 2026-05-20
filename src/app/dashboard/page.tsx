@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TodayPanel } from "@/components/auth/today-panel";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
-import { IntroSplash } from "@/components/dashboard/intro-splash";
 import { RevelationTimeline } from "@/components/dashboard/revelation-timeline";
 import { StreakAtRiskBanner } from "@/components/dashboard/streak-at-risk-banner";
 import { SurahOfTheDay } from "@/components/dashboard/surah-of-the-day";
@@ -34,7 +33,6 @@ const longestSurah = surahs.reduce((a, b) =>
 export default function DashboardPage() {
   return (
     <div className="flex h-dvh overflow-hidden">
-      <IntroSplash />
       <Sidebar />
       <main id="main-content" className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-4 pb-8 pt-16 md:px-6 md:py-8">
