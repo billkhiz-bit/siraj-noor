@@ -740,3 +740,56 @@ User wrote final Project Overview answers for the Provision Launch form. Voice-m
 
 - **Trust runtime over spec for QF User API shape validation.** Two separate fields in two separate endpoints came back different from the published OpenAPI today. Default stance going forward: only `id` and truly-critical-to-adapter fields are required on Zod schemas for QF wire types; everything else optional + nullable where the spec allows.
 - **Surface errors in-UI for submission-critical flows, not just console.** Today's debug loop required three diagnostic deploys to escalate error detail up from `console.error` into visible banners. For any endpoint whose failure pulls in sample-data fallback, having even a one-line `font-mono text-[11px]` diagnostic under the banner would have saved the first round-trip. Cost is tiny; reverted when the real fix lands.
+
+---
+
+## Update 2026-05-05 — deadline extended to 2026-05-20, submission framing refined
+
+Submission was held back from the 2026-04-20 cutoff. The Provision Launch / Quran Foundation public page now lists 2026-05-20 (early Dhu al-Hijjah 1447) as the submission deadline. 15 days from today. Use the window to refine pitch and capture validation signal, not to ship new code.
+
+### Framing decision: lead with habit-formation, not 3D
+
+Earlier framing positioned Siraj Noor as "3D data visualisation + personal companion features bolted on" (see README and SUBMISSION.md tagline). That order is wrong for the QF + Provision Launch panel — judging weights are **Impact 30 / Product Quality 20 / Tech Execution 20 / Innovation 15 / API Use 15**.
+
+3D visualisations score under Innovation (15%). Habit-formation features (streaks, daily goals, Activity heatmap, cross-device QF account) score under Impact (30%). Leading with 3D optimises the smaller lever.
+
+**Reframed positioning:**
+
+- *Old*: "3D Qur'an and Hadith data visualisation + personal companion"
+- *New*: "A personal Qur'an companion where your relationship with the Qur'an becomes visible — bookmarks, streaks, daily goals, and a year of reading rendered as a 3D heatmap. Powered end-to-end by the Quran Foundation User API."
+
+Same product, different headline. The Activity 3D heatmap becomes the centrepiece (already called out as "the differentiator" in `SUBMISSION.md` but currently buried under the visualisation list). The other nine visualisation views become supporting depth, not the main act.
+
+### Why the panel cares more about habit than wow
+
+The brief explicitly says "maintain Qur'an engagement beyond Ramadan" — that's a behaviour-change problem, not a visualisation problem. Three reads of the panel:
+
+- **Quran Foundation engineers**: care about novel, deep use of the User API. The habit loop covering `/reading-sessions` (heatmap) + `/activity-days` (goal progress) + `/goals/get-todays-plan` (target) + `/streaks/current-streak-days` (streak banner) is exactly the API-native story they want.
+- **Islamic scholars**: read 3D-first as gimmicky if it's not in service of engagement. Habit-formation framing reframes the same 3D as "tools that help someone return to the Mushaf tomorrow".
+- **Investors / Provision Launch**: read 3D-first as low-retention. Want to know what brings users back on day 8. Streaks, goals, and a heatmap that fills in over time is the answer.
+
+### What to do in the 15 days (priority order)
+
+| Effort | Score impact | Action |
+|---|---|---|
+| 30 min | High | Rewrite tagline + short description in `SUBMISSION.md` to lead with habit/companion story; demote 3D-as-product to 3D-as-medium; elevate Activity heatmap to centrepiece. |
+| 2 hrs | High | Restructure `app/page.tsx` landing page hierarchy: Today Panel + streak + goal first, 3D views below. |
+| Half day | High | Record 90-second demo video showing the daily-goal habit loop (open app → set 10-min goal → read → heatmap fills, streak ticks, surah glows on the ring). Optimised for Impact (30%). |
+| 1 day | Medium-high | Get 3-5 real users to try it for a week. Capture one-line testimonials. Adds adoption signal. |
+| Half day | Medium | Switch from prelive to production QF client (already on `Next Steps` in `SUBMISSION.md`); removes a known-limitation footnote. |
+
+### What NOT to do
+
+- **Don't add new features.** Adding code in the pre-submission window risks bugs that hurt Product Quality (20%) more than features add to Innovation (15%). Two QF contract-drift bugs were caught on Day 8; another stretch of feature work introduces the same risk for less score.
+- **Don't soften the API-Use story.** The current submission cleared eligibility "with significant headroom" — six User API resources actively read/written. Keep this prominent; it's a free 15% if framed clearly.
+- **Don't try to bolt Sky Score features into Siraj Noor or vice versa.** Confirmed in this conversation: QF APIs don't naturally integrate into Sky Score (property data has no place for bookmarks, streaks, reading sessions). Sky Score and Siraj Noor are separate wedges with separate competitions.
+
+### Cross-project context (as of 2026-05-05)
+
+User maintains three related projects with distinct wedges:
+- **Sky Score** (`OneDrive\Desktop\london-flight-path-map`) — property noise + livability scoring, pivoting toward halal home-buying / Islamic-finance B2B API. Targeting **Shared Futures Buildathon 2026-06-07** (Interchange / open track, application deadline 2026-05-15).
+- **Siraj** (frozen Ramadan Hacks 2026 entry, `siraj-ept.pages.dev`) — original 3D viewer, Content API only. No active competition.
+- **Siraj Noor** (this project, `siraj-noor.pages.dev`) — fork with full User API integration. For **Quran Foundation Hackathon 2026-05-20**.
+
+Don't cross-pollinate.
+
