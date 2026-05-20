@@ -76,7 +76,7 @@ npm run dev
 
 Requires a Quran Foundation OAuth client with the following configuration:
 - Redirect URI: `http://localhost:3000/auth/callback/`
-- Scopes requested at sign-in: `openid offline_access user bookmark collection reading_session goal streak post` (only `bookmark`, `collection`, `reading_session`, `streak`, plus the core `openid`/`offline_access`/`user` are currently exercised by the UI - `goal` and `post` scopes are reserved for future features)
+- Scopes requested at sign-in: `openid offline_access user bookmark collection reading_session goal streak post` (`bookmark`, `collection`, `reading_session`, `goal`, `streak`, plus the core `openid`/`offline_access`/`user`, are exercised by the UI; only the `post` scope is reserved for a future reflections feature)
 - Token endpoint auth: `client_secret_basic` (Cloudflare Pages Function proxies the token exchange to keep the secret server-side)
 
 **Contracts Deployed**: N/A - this is not a Web3 submission.
