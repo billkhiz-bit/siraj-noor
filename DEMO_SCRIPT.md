@@ -18,6 +18,15 @@ Everything after the habit loop is supporting evidence; cut from the bottom if r
 
 One detail not given camera time but worth a narrator aside if a scene lands short: the refresh-token flow is hardened with a single-flight gate so sibling providers (BookmarksProvider, CollectionsProvider, ReadingProgressProvider) can't cascade-revoke each other's access tokens on the initial page mount. It signals to judges that the integration is production-shaped, not a weekend prototype.
 
+### Console hygiene (only relevant if you show DevTools on camera)
+
+Lighthouse (2026-05-20) scored Accessibility 100, SEO 100, Best Practices 96; Performance 52-57 is the expected Three.js/WebGL cost and is not worth chasing. Two benign console items exist, both artefacts of Next.js static export, neither a real bug:
+
+- ~13 `404`s on `__next.<route>.__PAGE__.txt?_rsc=…` - these are RSC prefetch payloads that static export does not emit; `<Link>` falls back to a full navigation and everything still works.
+- React minified error `#418` - a hydration text mismatch from date-derived content (today's heatmap cell, streak, deterministic Surah/Ayah of the Day rendering against the build date). React recovers on the client.
+
+Neither affects the user-visible app. But if you open DevTools for the proof-of-integration insert, **filter the Network tab to `apis-prelive` and clear the Console first**, so the RSC 404s and the hydration warning don't appear on camera next to the genuine `200 OK` QF calls.
+
 ---
 
 ## Scene 1 · Hook - a year of reading, in 3D [0:00 → 0:12]
@@ -114,7 +123,7 @@ One detail not given camera time but worth a narrator aside if a scene lands sho
 
 **Show**
 - Click a surah bar → `/surah/2`, scroll to Ayat al-Kursi (2:255), click the bookmark star - it fills amber (optimistic UI)
-- Optional 2s insert: DevTools Network tab showing `POST /auth/v1/bookmarks` → 200 with the canonical `{key, verseNumber, type:"ayah", mushaf:4}` body
+- Optional 2s insert: DevTools Network tab showing `POST /auth/v1/bookmarks` → 200 with the canonical `{key, verseNumber, type:"ayah", mushaf:4}` body. **Filter the tab to `apis-prelive` first** (see Console hygiene below) so only the real QF calls show.
 - Cut to `Collections` - create one called "Ayahs that made me pause"; the CSS-perspective shelf renders it as a tilting card
 - Address bar: Chrome's install icon appears. Click it. OS install dialog → confirm
 - Cut to the installed standalone window launching - no URL bar, no tabs, amber lamp icon in the taskbar / dock
@@ -187,7 +196,7 @@ Fast cuts, ~3 seconds each. This is where the 3D depth lives, framed as the medi
 
 **During recording**
 
-- [ ] Open DevTools Network tab filtered by `apis-prelive` **just before** Scene 2 and let it record silently in the background; useful for the 2-second `200 OK` insert on `/auth/v1/bookmarks?mushafId=4&first=20` in Scene 6, as proof the integration is real, not mocked.
+- [ ] Open DevTools Network tab filtered by `apis-prelive` **just before** Scene 2 and let it record silently in the background; useful for the 2-second `200 OK` insert on `/auth/v1/bookmarks?mushafId=4&first=20` in Scene 6, as proof the integration is real, not mocked. Clear the Console pane too - the RSC 404s and the React #418 hydration warning (both benign, see Console hygiene) should not be on camera.
 - [ ] Between scenes: if the app state drifts (phantom bookmarks, stale streak), hard-refresh rather than stop-start - providers remount on hard refresh and pull fresh state from the API.
 
 ---
